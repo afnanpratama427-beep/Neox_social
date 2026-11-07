@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Upload · Neox</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#0d0d0f;--fg:#e6e6e6;--acc:#ffe14d;--acc2:#ff5252;--acc3:#4dff88;--card:#141418;--line:#2a2a30}
+  body{background:var(--bg);color:var(--fg);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding:24px 24px 100px}
+  .top{max-width:900px;margin:0 auto 24px;display:flex;justify-content:space-between;align-items:center}
+  .logo{font-size:24px;font-weight:900;letter-spacing:-.03em}
+  .logo span{background:var(--acc);color:#000;padding:0 6px}
+  .user-chip{background:var(--card);border:2px solid #000;padding:8px 14px;font-size:12px;font-weight:800;box-shadow:4px 4px 0 0 #000}
+  .wrap{max-width:900px;margin:0 auto}
+  .card{background:var(--card);border:3px solid #000;box-shadow:8px 8px 0 0 #000;padding:24px;margin-bottom:24px}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--acc);margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--line)}
+  .type-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
+  @media(max-width:600px){.type-row{grid-template-columns:repeat(2,1fr)}}
+  .type{background:var(--bg);border:2px solid var(--line);padding:14px 8px;text-align:center;cursor:pointer;font-size:12px;font-weight:800;text-transform:uppercase;transition:all .1s;user-select:none}
+  .type:hover{border-color:var(--acc)}
+  .type.on{background:var(--acc);color:#000;border-color:#000}
+  .type .ico{font-size:20px;margin-bottom:4px}
+  .field{margin-bottom:14px}
+  label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;opacity:.75;font-weight:700}
+  input[type=text],textarea,select{width:100%;background:var(--bg);color:var(--fg);border:2px solid var(--line);padding:10px 12px;font-family:inherit;font-size:14px;outline:none}
+  input:focus,textarea:focus{border-color:var(--acc)}
+  textarea{resize:vertical;min-height:100px;font-family:monospace}
+  .dropzone{border:3px dashed var(--line);padding:40px 20px;text-align:center;cursor:pointer;transition:border-color .15s}
+  .dropzone:hover,.dropzone.drag{border-color:var(--acc)}
+  .dropzone .big{font-size:36px;font-weight:900;color:var(--acc);margin-bottom:8px}
+  .dropzone .hint{font-size:12px;opacity:.6}
+  .dropzone input[type=file]{display:none}
+  .preview{margin-top:14px;padding:12px;background:var(--bg);border:2px solid var(--line);display:none}
+  .preview.on{display:block}
+  .preview .name{font-size:13px;font-weight:800;margin-bottom:4px;word-break:break-all}
+  .preview .meta{font-size:11px;opacity:.6}
+  .preview img{max-width:100%;max-height:200px;margin-top:8px;border:2px solid var(--line)}
+  .preview video,.preview audio{max-width:100%;margin-top:8px;width:100%}
+  .btn{background:var(--acc);color:#000;border:3px solid #000;padding:14px 24px;font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;box-shadow:5px 5px 0 0 #000;transition:transform .08s,box-shadow .08s;font-family:inherit;width:100%}
+  .btn:hover{transform:translate(-1px,-1px);box-shadow:6px 6px 0 0 #000}
+  .btn:active{transform:translate(5px,5px);box-shadow:0 0 0 0 #000}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .msg{font-size:12px;padding:10px;margin-bottom:14px;border:2px solid;display:none}
+  .msg.err{display:block;color:var(--acc2);border-color:var(--acc2);background:#2a1010}
+  .msg.ok{display:block;color:var(--acc3);border-color:var(--acc3);background:#0f2a18}
+  .code-box{background:#000;border:2px solid var(--acc);padding:14px;font-family:monospace;font-size:16px;font-weight:900;color:var(--acc);text-align:center;letter-spacing:.2em;margin:12px 0;word-break:break-all}
+  .link-row{display:flex;gap:8px;margin-top:8px}
+  .link-row input{flex:1;font-size:11px;font-family:monospace}
+  .link-row button{background:var(--card);border:2px solid #000;padding:0 16px;cursor:pointer;font-family:inherit;font-weight:800;font-size:11px}
+  .progress-bar{height:6px;background:var(--line);margin:10px 0;display:none}
+  .progress-bar.on{display:block}
+  .progress-bar .fill{height:100%;background:var(--acc);width:0;transition:width .2s}
+  .nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:3px solid #000;display:flex;justify-content:space-around;padding:8px 0;z-index:100}
+  .nav a{flex:1;text-align:center;padding:8px;text-decoration:none;color:var(--fg);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;opacity:.6}
+  .nav a.on{opacity:1;color:var(--acc)}
+  .nav a .ico{font-size:20px;display:block;margin-bottom:2px}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="logo">ne<span>ox</span></div>
+  <div class="user-chip" id="userChip">—</div>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <h2>// upload content</h2>
+    <div class="msg" id="msg"></div>
+
+    <div class="type-row">
+      <div class="type on" data-type="image" onclick="pickType(this)"><div class="ico">🖼</div>image</div>
+      <div class="type" data-type="video" onclick="pickType(this)"><div class="ico">🎬</div>video</div>
+      <div class="type" data-type="audio" onclick="pickType(this)"><div class="ico">🎵</div>audio</div>
+      <div class="type" data-type="file" onclick="pickType(this)"><div class="ico">📁</div>file</div>
+      <div class="type" data-type="apk" onclick="pickType(this)"><div class="ico">📦</div>apk</div>
+      <div class="type" data-type="html" onclick="pickType(this)"><div class="ico">🌐</div>html</div>
+      <div class="type" data-type="code" onclick="pickType(this)"><div class="ico">💻</div>code</div>
+      <div class="type" data-type="link" onclick="pickType(this)"><div class="ico">🔗</div>link</div>
+    </div>
+
+    <div class="field">
+      <label>judul</label>
+      <input type="text" id="title" placeholder="judul konten" maxlength="80">
+    </div>
+
+    <div class="field">
+      <label>deskripsi (opsional)</label>
+      <textarea id="desc" placeholder="deskripsi singkat..." maxlength="500"></textarea>
+    </div>
+
+    <div id="fileInputWrap">
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+        <div class="big">⬇</div>
+        <div style="font-weight:800;margin-bottom:4px" id="dzText">drop file atau klik pilih</div>
+        <div class="hint" id="dzHint">max 800KB (Limit Firestore Gratis)</div>
+        <input type="file" id="fileInput">
+      </div>
+      <div class="preview" id="preview"></div>
+    </div>
+
+    <div id="linkInputWrap" style="display:none">
+      <div class="field">
+        <label>url link</label>
+        <input type="text" id="linkUrl" placeholder="https://...">
+      </div>
+    </div>
+
+    <div id="codeInputWrap" style="display:none">
+      <div class="field">
+        <label>code</label>
+        <textarea id="codeContent" placeholder="paste code..." style="min-height:200px"></textarea>
+      </div>
+      <div class="field">
+        <label>bahasa</label>
+        <select id="codeLang">
+          <option>javascript</option><option>python</option><option>java</option>
+          <option>cpp</option><option>html</option><option>css</option><option>php</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="progress-bar" id="prog"><div class="fill" id="progFill"></div></div>
+    <button class="btn" id="uploadBtn" onclick="doUpload()">upload →</button>
+
+    <div id="resultWrap" style="display:none;margin-top:20px">
+      <h2 style="color:var(--acc3);border-color:var(--acc3)">// berhasil</h2>
+      <label>code akses</label>
+      <div class="code-box" id="resultCode">—</div>
+      <label>link langsung</label>
+      <div class="link-row">
+        <input type="text" id="resultLink" readonly>
+        <button onclick="copyResult()">copy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <a href="public.html"><span class="ico">🏠</span>home</a>
+  <a href="public.html#tools"><span class="ico">🔧</span>tools</a>
+  <a href="upload.html" class="on"><span class="ico">➕</span>upload</a>
+  <a href="public.html#info"><span class="ico">👤</span>info</a>
+</nav>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, addDoc, collection, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBK7pa3LJCxF1bP5_SbEA_3wQo5280n1FY",
+  authDomain: "nanzz-account.firebaseapp.com",
+  projectId: "nanzz-account",
+  storageBucket: "nanzz-account.firebasestorage.app",
+  messagingSenderId: "592556282125",
+  appId: "1:592556282125:web:6f3b4ec30e1a362c106044",
+  measurementId: "G-P62RNTWGMY"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
+let currentType = 'image';
+let currentFile = null;
+const MAX_SIZE = 800 * 1024; // Limit 800KB biar aman di Firestore
+
+function showMsg(t, type) {
+  const m = document.getElementById('msg');
+  m.textContent = t;
+  m.className = 'msg ' + type;
+  setTimeout(() => m.className = 'msg', 5000);
+}
+
+function pickType(el) {
+  document.querySelectorAll('.type').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  currentType = el.dataset.type;
+  currentFile = null;
+  document.getElementById('preview').className = 'preview';
+  document.getElementById('fileInput').value = '';
+
+  document.getElementById('fileInputWrap').style.display =
+    (currentType === 'link' || currentType === 'code') ? 'none' : 'block';
+  document.getElementById('linkInputWrap').style.display =
+    currentType === 'link' ? 'block' : 'none';
+  document.getElementById('codeInputWrap').style.display =
+    currentType === 'code' ? 'block' : 'none';
+
+  const hints = {
+    image: ['png, jpg, gif, webp', 'image/*'],
+    video: ['mp4, webm, mov', 'video/*'],
+    audio: ['mp3, wav, ogg', 'audio/*'],
+    file: ['pdf, doc, zip, dll', '*/*'],
+    apk: ['file .apk', '.apk'],
+    html: ['file .html', '.html'],
+    link: ['', ''],
+    code: ['', '']
+  };
+  document.getElementById('dzHint').textContent = 'max 800KB' + (hints[currentType][0] ? ' · ' + hints[currentType][0] : '');
+  document.getElementById('fileInput').accept = hints[currentType][1] || '*/*';
+}
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  if (f.size > MAX_SIZE) return showMsg('file max 800KB (limit gratis)', 'err');
+  currentFile = f;
+  renderPreview();
+});
+
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (!f) return;
+  if (f.size > MAX_SIZE) return showMsg('file max 800KB', 'err');
+  currentFile = f;
+  renderPreview();
+});
+
+function renderPreview() {
+  const p = document.getElementById('preview');
+  if (!currentFile) { p.className = 'preview'; return; }
+  p.className = 'preview on';
+  const sizeMb = (currentFile.size / 1024 / 1024).toFixed(2);
+  let html = `<div class="name">${currentFile.name}</div><div class="meta">${sizeMb} MB · ${currentFile.type || 'unknown'}</div>`;
+  const url = URL.createObjectURL(currentFile);
+  if (currentType === 'image') html += `<img src="${url}">`;
+  else if (currentType === 'video') html += `<video src="${url}" controls></video>`;
+  else if (currentType === 'audio') html += `<audio src="${url}" controls></audio>`;
+  p.innerHTML = html;
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+}
+
+function genCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+async function doUpload() {
+  if (!currentUser) return showMsg('belum login', 'err');
+  const title = document.getElementById('title').value.trim();
+  const desc  = document.getElementById('desc').value.trim();
+  if (!title) return showMsg('judul wajib', 'err');
+
+  let payload = {
+    type: currentType,
+    title: title,
+    desc: desc,
+    author: currentUser.name,
+    authorId: currentUser.uid,
+    createdAt: serverTimestamp(),
+    views: 0,
+    downloads: 0,
+    likes: 0
+  };
+
+  if (currentType === 'link') {
+    const url = document.getElementById('linkUrl').value.trim();
+    if (!url || !/^https?:\/\//.test(url)) return showMsg('url tidak valid', 'err');
+    payload.url = url;
+  } else if (currentType === 'code') {
+    const code = document.getElementById('codeContent').value;
+    if (!code.trim()) return showMsg('code kosong', 'err');
+    payload.code = code;
+    payload.lang = document.getElementById('codeLang').value;
+  } else {
+    if (!currentFile) return showMsg('pilih file dulu', 'err');
+  }
+
+  const btn = document.getElementById('uploadBtn');
+  const prog = document.getElementById('prog');
+  const fill = document.getElementById('progFill');
+  btn.disabled = true;
+  btn.textContent = 'uploading...';
+  prog.classList.add('on');
+  fill.style.width = '30%';
+
+  try {
+    const postCode = genCode();
+
+    if (currentType !== 'link' && currentType !== 'code') {
+      const base64Data = await fileToBase64(currentFile);
+      payload.fileUrl = base64Data;
+      payload.filename = currentFile.name;
+      payload.size = currentFile.size;
+      payload.mime = currentFile.type;
+    }
+
+    fill.style.width = '85%';
+
+    await setDoc(doc(db, 'posts', postCode), payload);
+
+    await addDoc(collection(db, 'activity'), {
+      uid: currentUser.uid,
+      user: currentUser.name,
+      action: 'upload',
+      detail: `${currentType}: ${title} [${postCode}]`,
+      time: serverTimestamp()
+    });
+
+    fill.style.width = '100%';
+
+    const baseUrl = location.href.replace(/upload\.html.*$/, 'public.html');
+    document.getElementById('resultCode').textContent = postCode;
+    document.getElementById('resultLink').value = baseUrl + '?code=' + postCode;
+    document.getElementById('resultWrap').style.display = 'block';
+    showMsg('upload berhasil!', 'ok');
+
+    document.getElementById('title').value = '';
+    document.getElementById('desc').value = '';
+    document.getElementById('fileInput').value = '';
+    document.getElementById('linkUrl').value = '';
+    document.getElementById('codeContent').value = '';
+    currentFile = null;
+    document.getElementById('preview').className = 'preview';
+  } catch(e) {
+    showMsg('gagal: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'upload →';
+    setTimeout(() => { prog.classList.remove('on'); fill.style.width = '0'; }, 1000);
+  }
+}
+
+function copyResult() {
+  const l = document.getElementById('resultLink');
+  l.select();
+  document.execCommand('copy');
+  showMsg('link dicopy', 'ok');
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href = 'auth.html'; return; }
+  const snap = await getDoc(doc(db, 'users', user.uid));
+  if (!snap.exists()) { location.href = 'auth.html'; return; }
+  if (snap.data().banned) { location.href = 'auth.html'; return; }
+  currentUser = { uid: user.uid, ...snap.data() };
+  document.getElementById('userChip').textContent = currentUser.name;
+});
+</script>
+</body>
+</html>
