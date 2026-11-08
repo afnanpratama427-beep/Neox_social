@@ -34,10 +34,17 @@
   .comment-input{display:flex;gap:8px;margin-top:12px}
   .comment-input input{flex:1;padding:10px;background:var(--card);border:3px solid var(--line);font-family:inherit;font-weight:600}
   .comment-input button{background:var(--acc);border:3px solid var(--line);font-weight:900;padding:0 16px;cursor:pointer;box-shadow:3px 3px 0 var(--line)}
-  .tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .tool-card{background:var(--card);border:3px solid var(--line);padding:16px;cursor:pointer;box-shadow:4px 4px 0 var(--line)}
-  .tool-card .name{font-size:14px;font-weight:900;margin-top:8px}
-  .tool-card .ico{font-size:32px}
+  
+  .tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+  .tool-card{background:var(--card);border:3px solid var(--line);padding:16px;cursor:pointer;box-shadow:4px 4px 0 var(--line);text-align:center}
+  .tool-card:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--line)}
+  .tool-card .ico{font-size:32px;margin-bottom:8px}
+  .tool-card .name{font-size:14px;font-weight:900}
+  
+  .tictactoe{display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;max-width:300px;margin:0 auto 16px}
+  .ttt-cell{background:var(--bg);border:3px solid var(--line);height:80px;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 var(--line)}
+  .ttt-cell:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--line)}
+
   .profile-head{display:flex;gap:16px;align-items:center;margin-bottom:20px}
   .avatar{width:80px;height:80px;background:var(--acc);border:4px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;color:var(--line);object-fit:cover;box-shadow:4px 4px 0 var(--line)}
   .field{margin-bottom:16px}
@@ -61,22 +68,31 @@
     <div class="logo">ne<span>ox</span></div>
     <div class="search"><input type="text" id="searchInput" placeholder="cari postingan..."></div>
   </div>
+  
   <div class="view on" id="viewHome"><div id="feed"></div></div>
-  <div class="view" id="viewTools"><div class="card"><h2>// tools</h2><div class="tool-grid"><div class="tool-card" onclick="alert('Fitur konverter')"><div class="ico">🔄</div><div class="name">Konverter</div></div><div class="tool-card" onclick="alert('Fitur QR')"><div class="ico">📱</div><div class="name">QR Code</div></div></div></div></div>
+  
+  <div class="view" id="viewTools">
+    <div class="card"><h2>// tools & game</h2>
+      <div class="tool-grid">
+        <div class="tool-card" onclick="openTool('calc')"><div class="ico">🧮</div><div class="name">Kalkulator</div></div>
+        <div class="tool-card" onclick="openTool('ttt')"><div class="ico">❌⭕</div><div class="name">Tic Tac Toe</div></div>
+        <div class="tool-card" onclick="openTool('b64')"><div class="ico">🔐</div><div class="name">Base64</div></div>
+        <div class="tool-card" onclick="openTool('qr')"><div class="ico">📱</div><div class="name">QR Code</div></div>
+      </div>
+      <div id="toolResult" style="display:none;border-top:3px dashed var(--line);padding-top:16px;margin-top:16px"></div>
+    </div>
+  </div>
+
   <div class="view" id="viewSettings">
     <div class="card">
       <h2>// pengaturan profil</h2>
-      <div class="profile-head">
-        <img id="setAvatar" class="avatar" src="" style="display:none;">
-        <div id="setAvatarText" class="avatar">A</div>
-        <div style="flex:1"><label>Ganti Foto Profil (Max 500KB)</label><input type="file" id="setPhoto" accept="image/*" style="font-size:11px;border:none;box-shadow:none;padding:0"></div>
-      </div>
+      <div class="field"><label>Password Akun Lu</label><input type="text" id="setPass" readonly style="background:#e2e8f0;cursor:not-allowed"></div>
       <div class="field"><label>Nama Akun (8-32)</label><input type="text" id="setName" maxlength="32"></div>
       <div class="field"><label>Bio</label><textarea id="setBio" maxlength="200" rows="3"></textarea></div>
-      <div class="field"><label>Tema Warna</label><select id="setTheme" onchange="changeTheme(this.value)"><option value="#ffe14d">Kuning</option><option value="#ff5252">Merah</option><option value="#4dff88">Hijau</option><option value="#4d9fff">Biru</option></select></div>
       <button class="btn" onclick="saveProfile()">simpan perubahan</button>
     </div>
   </div>
+
   <div class="view" id="viewInfo">
     <div class="card"><h2>// info akun</h2>
       <div class="profile-head">
@@ -88,6 +104,7 @@
     </div>
   </div>
 </div>
+
 <nav class="nav">
   <a class="on" id="navHome" onclick="switchView('home')"><span class="ico">🏠</span>home</a>
   <a id="navTools" onclick="switchView('tools')"><span class="ico">🔧</span>tools</a>
@@ -100,11 +117,11 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, updateDoc, deleteDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 const firebaseConfig = { apiKey: "AIzaSyBK7pa3LJCxF1bP5_SbEA_3wQo5280n1FY", authDomain: "nanzz-account.firebaseapp.com", projectId: "nanzz-account", storageBucket: "nanzz-account.firebasestorage.app", messagingSenderId: "592556282125", appId: "1:592556282125:web:6f3b4ec30e1a362c106044" };
 const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 const SUPER_DEV = "afnanpratama427@gmail.com";
-let currentUser = null; let allPosts = []; let unsubFeed = null; let pendingPhotoBase64 = null;
+let currentUser = null; let allPosts = []; let unsubFeed = null;
 
 window.toast = function(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2000);}
 window.logout = function(){ signOut(auth).then(()=>location.href='auth.html'); }
@@ -119,19 +136,12 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) { location.href = 'auth.html'; return; }
   const snap = await getDoc(doc(db, 'users', user.uid));
   if (!snap.exists() || snap.data().banned) { location.href = 'auth.html'; return; }
-  
-  // Kalau dia belum isi profil (isNew), tendang ke setup
-  if (snap.data().isNew) { location.href = 'setup.html'; return; }
-  
   if (snap.data().role === 'developer' || user.email === SUPER_DEV) { location.href = 'admin.html'; return; }
   
   currentUser = { uid: user.uid, ...snap.data() };
-  if(currentUser.theme) document.documentElement.style.setProperty('--acc', currentUser.theme);
-  
   onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
     if(docSnap.exists()) { currentUser = { uid: user.uid, ...docSnap.data() }; renderProfile(); }
   });
-
   loadFeed();
 });
 
@@ -194,56 +204,67 @@ window.sharePost = function(code) {
 }
 window.delPost = async function(code) { if(!confirm('Hapus postingan?')) return; await deleteDoc(doc(db, 'posts', code)); toast('Dihapus'); }
 
-document.getElementById('setPhoto').addEventListener('change', function(e) {
-  const file = e.target.files[0]; if(!file) return;
-  if(file.size > 500 * 1024) return toast('Max 500KB');
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    pendingPhotoBase64 = ev.target.result;
-    document.getElementById('setAvatar').src = pendingPhotoBase64;
-    document.getElementById('setAvatar').style.display = 'block';
-    document.getElementById('setAvatarText').style.display = 'none';
-  };
-  reader.readAsDataURL(file);
-});
-
-window.changeTheme = function(color) { document.documentElement.style.setProperty('--acc', color); }
-
 function renderProfile() {
   if (!currentUser) return;
   document.getElementById('infoName').textContent = '@' + currentUser.name;
   document.getElementById('infoEmail').textContent = currentUser.email;
   document.getElementById('setName').value = currentUser.name;
   document.getElementById('setBio').value = currentUser.bio || '';
+  document.getElementById('setPass').value = currentUser.pass || '(Tidak diset)';
   if(currentUser.photo) {
     document.getElementById('infoAvatar').src = currentUser.photo;
     document.getElementById('infoAvatar').style.display = 'block';
     document.getElementById('infoAvatarText').style.display = 'none';
-    document.getElementById('setAvatar').src = currentUser.photo;
-    document.getElementById('setAvatar').style.display = 'block';
-    document.getElementById('setAvatarText').style.display = 'none';
   }
 }
 
 window.saveProfile = async function() {
   const newName = document.getElementById('setName').value.trim();
   const newBio = document.getElementById('setBio').value.trim();
-  const newTheme = document.getElementById('setTheme').value;
   if(newName.length < 8) return toast('Nama minimal 8 karakter');
-  let updateData = { name: newName, bio: newBio, theme: newTheme };
-  if(pendingPhotoBase64) updateData.photo = pendingPhotoBase64;
-
   try {
-    if(newName !== currentUser.name) {
-      const nc = await getDoc(doc(db, 'usernames', newName.toLowerCase()));
-      if(nc.exists()) throw new Error('Nama sudah dipakai orang lain');
-      await deleteDoc(doc(db, 'usernames', currentUser.name.toLowerCase()));
-      await setDoc(doc(db, 'usernames', newName.toLowerCase()), { uid: currentUser.uid, name: newName });
-    }
-    await updateDoc(doc(db, 'users', currentUser.uid), updateData);
+    await updateDoc(doc(db, 'users', currentUser.uid), { name: newName, bio: newBio });
     toast('Profil disimpan!');
-    pendingPhotoBase64 = null; 
   } catch(e) { toast(e.message); }
+}
+
+// ==== LOGIKA TOOLS (UDAH JALAN) ====
+window.openTool = function(t) {
+  const res = document.getElementById('toolResult'); res.style.display = 'block';
+  if(t === 'calc') {
+    res.innerHTML = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      <input type="text" id="calcIn" placeholder="1+1" style="grid-column:span 3;font-size:20px;text-align:right">
+      <button class="btn" onclick="document.getElementById('calcOut').textContent=eval(document.getElementById('calcIn').value)" style="grid-column:span 3">Hitung</button>
+      <div id="calcOut" style="grid-column:span 3;text-align:center;font-size:24px;font-weight:900"></div>
+    </div>`;
+  } else if(t === 'ttt') {
+    res.innerHTML = `<div class="tictactoe" id="tttBoard"></div><button class="btn" onclick="resetTTT()">Reset</button>`;
+    resetTTT();
+  } else if(t === 'b64') {
+    res.innerHTML = `<textarea id="b64In" placeholder="ketik teks..."></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="btn" onclick="document.getElementById('b64Out').value=btoa(document.getElementById('b64In').value)">Encode</button><button class="btn" onclick="document.getElementById('b64Out').value=atob(document.getElementById('b64In').value)">Decode</button></div>
+      <input type="text" id="b64Out" readonly placeholder="hasil...">`;
+  } else if(t === 'qr') {
+    res.innerHTML = `<input type="text" id="qrIn" placeholder="teks / url...">
+      <button class="btn" style="margin-top:8px" onclick="document.getElementById('qrImg').src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(document.getElementById('qrIn').value)">Buat QR</button>
+      <div style="text-align:center;margin-top:16px"><img id="qrImg" style="border:3px solid #000;max-width:100%"></div>`;
+  }
+}
+
+// Game Tic Tac Toe Logic
+let tttBoard = ['', '', '', '', '', '', '', '', ''];
+let tttPlayer = 'X';
+window.resetTTT = function() {
+  tttBoard = ['', '', '', '', '', '', '', '', ''];
+  tttPlayer = 'X';
+  const b = document.getElementById('tttBoard');
+  b.innerHTML = tttBoard.map((v, i) => `<div class="ttt-cell" onclick="playTTT(${i})">${v}</div>`).join('');
+}
+window.playTTT = function(i) {
+  if(tttBoard[i] !== '') return;
+  tttBoard[i] = tttPlayer;
+  tttPlayer = tttPlayer === 'X' ? 'O' : 'X';
+  resetTTT();
 }
 
 document.getElementById('searchInput').addEventListener('input', renderFeed);
