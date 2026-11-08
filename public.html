@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Neox</title>
 <style>
+  :root{color-scheme:light;--bg:#f0f4f8;--fg:#111111;--acc:#ffe14d;--acc2:#ff5252;--acc3:#4dff88;--card:#ffffff;--line:#111111;}
   *{box-sizing:border-box;margin:0;padding:0}
-  :root{--bg:#f0f4f8;--fg:#111111;--acc:#ffe14d;--acc2:#ff5252;--acc3:#4dff88;--card:#ffffff;--line:#111111;}
   body{background-color:var(--bg);background-image:radial-gradient(#cbd5e1 2px,transparent 2px);background-size:20px 20px;color:var(--fg);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding-bottom:100px;}
   .wrap{max-width:640px;margin:0 auto;padding:16px}
   .top{display:flex;justify-content:space-between;align-items:center;padding:12px 0;margin-bottom:16px;gap:8px}
@@ -15,9 +15,13 @@
   .search{flex:1}.search input{width:100%;background:var(--card);color:var(--fg);border:3px solid var(--line);padding:10px;font-family:inherit;font-weight:700;box-shadow:4px 4px 0 var(--line);outline:none}
   .card{background:var(--card);border:4px solid var(--line);box-shadow:8px 8px 0 var(--line);padding:20px;margin-bottom:24px}
   .card h2{font-size:14px;text-transform:uppercase;font-weight:900;color:var(--line);margin-bottom:16px;border-bottom:3px solid var(--line);padding-bottom:10px;letter-spacing:1px}
+  
   .post-head{display:flex;justify-content:space-between;margin-bottom:12px;align-items:center}
+  .author-wrap{display:flex;align-items:center;gap:8px}
+  .author-avatar{width:32px;height:32px;background:var(--acc);border:2px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;object-fit:cover}
   .post-author{font-size:14px;font-weight:900;background:var(--acc);padding:2px 8px;border:2px solid var(--line);box-shadow:2px 2px 0 var(--line);display:flex;align-items:center;gap:4px}
-  .verified-badge{width:16px;height:16px;fill:#1DA1F2} /* Centang Biru */
+  .verified-badge{width:16px;height:16px;fill:#1DA1F2;}
+  
   .post-code{font-family:monospace;font-size:12px;background:var(--fg);border:2px solid var(--line);padding:4px 8px;color:var(--acc);font-weight:900;cursor:pointer;box-shadow:2px 2px 0 var(--acc)}
   .post-title{font-size:18px;font-weight:900;margin-bottom:8px}
   .post-desc{font-size:14px;font-weight:600;margin-bottom:16px;color:#444;line-height:1.4}
@@ -29,6 +33,7 @@
   .action-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--line)}
   .action-btn.danger{background:var(--acc2);color:#fff}
   .action-btn.share{background:var(--acc)}
+  
   .comment-box{margin-top:16px;padding-top:16px;border-top:3px dashed var(--line)}
   .comment-item{font-size:13px;font-weight:600;margin-bottom:8px;padding:8px;background:var(--bg);border:2px solid var(--line)}
   .comment-item b{font-weight:900;color:var(--line)}
@@ -54,6 +59,7 @@
   input[type=file]{width:100%;font-size:12px;font-weight:900;padding:10px;border:3px dashed var(--line);background:var(--bg);cursor:pointer}
   .btn{background:var(--acc);color:var(--line);border:4px solid var(--line);padding:14px;font-size:14px;font-weight:900;cursor:pointer;box-shadow:5px 5px 0 var(--line);width:100%;transition:transform .05s}
   .btn:active{transform:translate(5px,5px);box-shadow:0 0 0 var(--line)}
+  
   .nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:4px solid var(--line);display:flex;z-index:100;padding:8px;gap:8px;justify-content:space-between}
   .nav a{flex:1;text-align:center;padding:8px 4px;color:var(--line);font-size:11px;font-weight:900;text-transform:uppercase;cursor:pointer;border:3px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none}
   .nav a .ico{font-size:22px;margin-bottom:4px}
@@ -91,10 +97,10 @@
       <div class="profile-head">
         <img id="setAvatar" class="avatar" src="" style="display:none;">
         <div id="setAvatarText" class="avatar">A</div>
-        <div style="flex:1"><label>Ganti Foto Profil (Max 500KB)</label><input type="file" id="setPhoto" accept="image/*"></div>
+        <div style="flex:1"><label>Ganti Foto Profil</label><input type="file" id="setPhoto" accept="image/*"></div>
       </div>
-      <div class="field"><label>Nama Akun (8-32)</label><input type="text" id="setName" maxlength="32"></div>
-      <div class="field"><label>Password Akun (Bisa Diganti)</label><input type="text" id="setPass" placeholder="Password baru..."></div>
+      <div class="field"><label>Nama Akun</label><input type="text" id="setName" maxlength="32"></div>
+      <div class="field"><label>Password Akun</label><input type="text" id="setPass" placeholder="Password baru..."></div>
       <div class="field"><label>Bio</label><textarea id="setBio" maxlength="200" rows="3"></textarea></div>
       <button class="btn" onclick="saveProfile()">simpan perubahan</button>
     </div>
@@ -127,7 +133,6 @@ import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/fi
 import { getFirestore, doc, getDoc, updateDoc, deleteDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 const firebaseConfig = { apiKey: "AIzaSyBK7pa3LJCxF1bP5_SbEA_3wQo5280n1FY", authDomain: "nanzz-account.firebaseapp.com", projectId: "nanzz-account", storageBucket: "nanzz-account.firebasestorage.app", messagingSenderId: "592556282125", appId: "1:592556282125:web:6f3b4ec30e1a362c106044" };
 const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
-const SUPER_DEV = "afnanpratama427@gmail.com";
 let currentUser = null; let allPosts = []; let unsubFeed = null; let pendingPhotoBase64 = null;
 
 window.toast = function(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2000);}
@@ -144,10 +149,7 @@ onAuthStateChanged(auth, async (user) => {
   const snap = await getDoc(doc(db, 'users', user.uid));
   if (!snap.exists() || snap.data().banned) { location.href = 'auth.html'; return; }
   
-  // Developer tetep masuk sini kalau milih Neox Social
   currentUser = { uid: user.uid, ...snap.data() };
-  if(currentUser.theme) document.documentElement.style.setProperty('--acc', currentUser.theme);
-  
   onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
     if(docSnap.exists()) { currentUser = { uid: user.uid, ...docSnap.data() }; renderProfile(); }
   });
@@ -160,7 +162,6 @@ function loadFeed() {
   unsubFeed = onSnapshot(q1, snap => { allPosts = []; snap.forEach(d => allPosts.push({code: d.id, ...d.data()})); renderFeed(); });
 }
 
-// SVG Centang Biru
 const verifySVG = `<svg class="verified-badge" viewBox="0 0 24 24"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.918-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.337 2.25c-.416-.165-.866-.25-1.336-.25-2.21 0-3.918 1.79-3.918 4 0 .495.084.965.238 1.4-1.273.65-2.148 2.02-2.148 3.6 0 1.46.742 2.74 1.86 3.46-.153.43-.236.89-.236 1.36 0 2.21 1.71 4 3.918 4 .47 0 .92-.086 1.336-.25.52 1.33 1.827 2.25 3.337 2.25s2.816-.918 3.337-2.25c.416.165.866.25 1.336.25 2.208 0 3.918-1.79 3.918-4 0-.47-.083-.93-.236-1.36 1.118-.72 1.86-2 1.86-3.46zM10.75 16.75l-3.5-3.5 1.41-1.41 2.09 2.09 5.09-5.09 1.41 1.41-6.5 6.5z"/></svg>`;
 
 function renderFeed() {
@@ -168,12 +169,20 @@ function renderFeed() {
   const f = document.getElementById('searchInput').value.toLowerCase();
   if (f) posts = posts.filter(p => (p.title||'').toLowerCase().includes(f) || (p.author||'').toLowerCase().includes(f));
   
-  document.getElementById('feed').innerHTML = posts.map(p => `
+  document.getElementById('feed').innerHTML = posts.map(p => {
+    // Nentuin Centang Biru
+    const isDev = p.author === "Developer" || p.authorId === "superdev" || p.authorRole === "developer";
+    // Avatar fallback
+    const avatarHtml = p.authorPhoto 
+      ? `<img src="${p.authorPhoto}" class="author-avatar">` 
+      : `<div class="author-avatar">${p.author.charAt(0).toUpperCase()}</div>`;
+
+    return `
     <div class="card">
       <div class="post-head">
-        <div class="post-author">
-          @${p.author} 
-          ${p.author === "Developer" || p.authorId === "superdev" ? verifySVG : ''}
+        <div class="author-wrap">
+          ${avatarHtml}
+          <div class="post-author">@${p.author} ${isDev ? verifySVG : ''}</div>
         </div>
         <div class="post-code" onclick="navigator.clipboard.writeText('${p.code}');toast('Code dicopy')">${p.code}</div>
       </div>
@@ -194,8 +203,8 @@ function renderFeed() {
         <div id="comments-${p.code}" style="max-height:150px;overflow-y:auto;">Memuat...</div>
         <div class="comment-input"><input type="text" id="input-${p.code}" placeholder="Tulis komentar..."><button onclick="sendComment('${p.code}')">KIRIM</button></div>
       </div>
-    </div>
-  `).join('');
+    </div>`; 
+  }).join('');
   posts.forEach(p => loadComments(p.code));
 }
 
@@ -240,7 +249,7 @@ function renderProfile() {
   document.getElementById('infoEmail').textContent = currentUser.email;
   document.getElementById('setName').value = currentUser.name;
   document.getElementById('setBio').value = currentUser.bio || '';
-  document.getElementById('setPass').value = currentUser.pass || ''; // Nampilin password
+  document.getElementById('setPass').value = currentUser.pass || ''; 
   
   if(currentUser.photo) {
     document.getElementById('infoAvatar').src = currentUser.photo;
@@ -292,74 +301,39 @@ window.openTool = function(t) {
   }
 }
 
-// LOGIC TIC TAC TOE FIX
 let tttState = ["", "", "", "", "", "", "", "", ""];
-let tttTurn = "X";
-let tttActive = true;
-
+let tttTurn = "X"; let tttActive = true;
 window.resetTTT = function() {
-  tttState = ["", "", "", "", "", "", "", "", ""];
-  tttTurn = "X"; tttActive = true;
+  tttState = ["", "", "", "", "", "", "", "", ""]; tttTurn = "X"; tttActive = true;
   document.getElementById('tttStatus').textContent = "Giliran: X";
-  const b = document.getElementById('tttBoard');
-  b.innerHTML = tttState.map((v, i) => `<div class="ttt-cell" onclick="playTTT(${i})">${v}</div>`).join('');
+  updateTTTBoard();
 }
-
 window.playTTT = function(i) {
   if (!tttActive || tttState[i] !== "") return;
+  tttState[i] = tttTurn; updateTTTBoard();
+  if (checkTTTWin(tttTurn)) { document.getElementById('tttStatus').textContent = `PEMAIN ${tttTurn} MENANG! 🎉`; tttActive = false; return; }
+  if (!tttState.includes("")) { document.getElementById('tttStatus').textContent = `SERI! 🤝`; tttActive = false; return; }
   
-  // Player main
-  tttState[i] = tttTurn;
-  updateTTTBoard();
-  
-  if (checkTTTWin(tttTurn)) {
-    document.getElementById('tttStatus').textContent = `PEMAIN ${tttTurn} MENANG! 🎉`;
-    tttActive = false; return;
-  }
-  if (!tttState.includes("")) {
-    document.getElementById('tttStatus').textContent = `SERI! 🤝`;
-    tttActive = false; return;
-  }
-
-  // Giliran Bot (O)
-  tttTurn = "O";
-  document.getElementById('tttStatus').textContent = "Bot mikir...";
+  tttTurn = "O"; document.getElementById('tttStatus').textContent = "Bot mikir...";
   setTimeout(botTTTMove, 500);
 }
-
 function botTTTMove() {
   if (!tttActive) return;
   let empty = tttState.map((v, i) => v === "" ? i : null).filter(v => v !== null);
   if (empty.length === 0) return;
-  
-  // Bot milih random (simple AI)
   let move = empty[Math.floor(Math.random() * empty.length)];
-  tttState[move] = "O";
-  updateTTTBoard();
-  
-  if (checkTTTWin("O")) {
-    document.getElementById('tttStatus').textContent = `BOT MENANG! 🤖`;
-    tttActive = false; return;
-  }
-  if (!tttState.includes("")) {
-    document.getElementById('tttStatus').textContent = `SERI! 🤝`;
-    tttActive = false; return;
-  }
-
-  tttTurn = "X";
-  document.getElementById('tttStatus').textContent = "Giliran: X";
+  tttState[move] = "O"; updateTTTBoard();
+  if (checkTTTWin("O")) { document.getElementById('tttStatus').textContent = `BOT MENANG! 🤖`; tttActive = false; return; }
+  if (!tttState.includes("")) { document.getElementById('tttStatus').textContent = `SERI! 🤝`; tttActive = false; return; }
+  tttTurn = "X"; document.getElementById('tttStatus').textContent = "Giliran: X";
 }
-
 function updateTTTBoard() {
-  const b = document.getElementById('tttBoard');
-  b.innerHTML = tttState.map((v, i) => `<div class="ttt-cell" onclick="playTTT(${i})">${v}</div>`).join('');
+  document.getElementById('tttBoard').innerHTML = tttState.map((v, i) => `<div class="ttt-cell" onclick="playTTT(${i})">${v}</div>`).join('');
 }
-
 function checkTTTWin(p) {
   const win = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
   return win.some(w => tttState[w[0]] === p && tttState[w[1]] === p && tttState[w[2]] === p);
 }
-
 document.getElementById('searchInput').addEventListener('input', renderFeed);
 </script>
 </body>
