@@ -3,26 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Developer - Neox</title>
+<title>Developer - NEOX</title>
 <style>
   :root{color-scheme:light;--bg:#f0f4f8;--fg:#111111;--acc:#ffe14d;--acc2:#ff5252;--acc3:#4dff88;--card:#ffffff;--line:#111111}
   *{box-sizing:border-box;margin:0;padding:0}
   body{background-color:var(--bg);background-image:radial-gradient(#cbd5e1 2px,transparent 2px);background-size:20px 20px;color:var(--fg);font-family:'Inter',system-ui,sans-serif;padding:24px;min-height:100vh}
   .wrap{max-width:800px;margin:0 auto}
   .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
-  .logo{font-size:24px;font-weight:900;border:3px solid var(--line);background:var(--card);padding:4px 10px;box-shadow:4px 4px 0 var(--line)}
-  .logo span{background:var(--acc2);color:#fff;padding:0 6px;border:2px solid var(--line)}
+  .logo-wrap{display:flex;align-items:center;gap:4px}
+  .logo{font-size:24px;font-weight:900;border:3px solid var(--line);background:var(--card);padding:4px 10px;box-shadow:4px 4px 0 var(--line);display:flex;align-items:center}
+  .logo span{background:var(--acc2);color:#fff;padding:0 6px;border:2px solid var(--line);margin-left:2px}
+  .header-verify{background:#1877F2;color:white;border-radius:50%;padding:2px 6px;font-weight:bold;font-size:14px;border:2px solid var(--line);box-shadow:2px 2px 0 var(--line)}
+  
   .card{background:var(--card);border:4px solid var(--line);box-shadow:8px 8px 0 var(--line);padding:20px;margin-bottom:20px}
   .card h2{font-size:16px;font-weight:900;text-transform:uppercase;margin-bottom:20px;border-bottom:3px solid var(--line);padding-bottom:12px;display:flex;justify-content:space-between;align-items:center;letter-spacing:1px}
   .user-row{display:flex;justify-content:space-between;align-items:center;background:var(--bg);padding:16px;margin-bottom:12px;border:3px solid var(--line);box-shadow:4px 4px 0 var(--line);flex-wrap:wrap;gap:12px}
-  .user-name{font-weight:900;font-size:16px;margin-bottom:4px}
+  .user-name{font-weight:900;font-size:16px;margin-bottom:4px;display:flex;align-items:center;gap:4px}
   .user-email{font-size:12px;font-weight:700;opacity:.8}
   .badge{font-size:10px;padding:4px 8px;font-weight:900;margin-left:8px;border:2px solid var(--line)}
   .badge.ban{background:var(--acc2);color:#fff}.badge.ok{background:var(--acc3);color:var(--line)}.badge.dev{background:#4d9fff;color:#fff}
+  .badge.verify{background:#1877F2;color:white}
   .btn{background:var(--card);border:3px solid var(--line);padding:8px 12px;font-weight:900;font-size:11px;cursor:pointer;font-family:inherit;margin-left:4px;box-shadow:3px 3px 0 var(--line);text-transform:uppercase;transition:transform .05s}
   .btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--line)}
   .btn.ban{background:var(--acc2);color:#fff}.btn.unban{background:var(--acc3);color:var(--line)}.btn.del{background:var(--line);color:#fff}
   .btn.refresh{background:var(--acc);color:var(--line)}.btn.dev{background:#4d9fff;color:#fff}
+  .btn.verify-btn{background:#1877F2;color:#fff}
   
   /* MODAL NOTIFIKASI */
   .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:999;padding:20px}
@@ -39,7 +44,10 @@
 <body>
 <div class="wrap">
   <div class="top">
-    <div class="logo">ne<span>ox</span> dev</div>
+    <div class="logo-wrap">
+      <div class="logo">NE<span>OX</span></div>
+      <div class="header-verify">✓</div>
+    </div>
     <button class="btn del" onclick="logout()">LOGOUT</button>
   </div>
   <div class="card">
@@ -101,11 +109,13 @@ window.loadUsers = function(currentEmail) {
       const u = d.data();
       const isTargetSuper = u.email === SUPER_DEV;
       const isTargetDev = u.role === 'developer';
+      const isVerified = u.isVerified === true;
       
       const actionButtons = isTargetSuper ? '<span style="font-size:12px;font-weight:900;background:var(--line);color:#fff;padding:6px 10px;border:3px solid var(--line)">SUPER ADMIN</span>' : `
         ${isSuper ? `
           ${u.banned ? `<button class="btn unban" onclick="doUnban('${d.id}')">UNBAN</button>` : `<button class="btn ban" onclick="doBan('${d.id}')">BAN</button>`}
           ${isTargetDev ? `<button class="btn" onclick="doRemoveDev('${d.id}')">COPOT DEV</button>` : `<button class="btn dev" onclick="doMakeDev('${d.id}')">JADIKAN DEV</button>`}
+          ${isTargetDev ? (isVerified ? `<button class="btn" onclick="doUnverify('${d.id}')">CABUT BLUE</button>` : `<button class="btn verify-btn" onclick="doVerify('${d.id}')">CENTANG BIRU</button>`) : ''}
           <button class="btn del" onclick="doDelUser('${d.id}', '${u.name}')">HAPUS</button>
         ` : `<span style="font-size:12px;font-weight:900;opacity:.5">Read Only</span>`}
       `;
@@ -113,7 +123,12 @@ window.loadUsers = function(currentEmail) {
       html += `
         <div class="user-row">
           <div class="user-info">
-            <div class="user-name">@${u.name} ${u.banned ? '<span class="badge ban">BANNED</span>' : '<span class="badge ok">AKTIF</span>'} ${isTargetDev || isTargetSuper ? '<span class="badge dev">DEVELOPER</span>' : ''}</div>
+            <div class="user-name">
+              @${u.name} 
+              ${isVerified ? '<span style="background:#1877F2;color:white;border-radius:50%;padding:2px 6px;font-weight:bold;font-size:12px;">✓</span>' : ''}
+              ${u.banned ? '<span class="badge ban">BANNED</span>' : '<span class="badge ok">AKTIF</span>'}
+              ${isTargetDev || isTargetSuper ? '<span class="badge dev">DEVELOPER</span>' : ''}
+            </div>
             <div class="user-email">${u.email}</div>
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:4px">${actionButtons}</div>
@@ -127,6 +142,11 @@ window.doBan = function(uid) { showConfirm('Ban user ini?', async () => { await 
 window.doUnban = function(uid) { showConfirm('Unban user ini?', async () => { await updateDoc(doc(db, 'users', uid), { banned: false }); toast('User Aktif Kembali'); }); };
 window.doMakeDev = function(uid) { showConfirm('Jadikan Developer?', async () => { await updateDoc(doc(db, 'users', uid), { role: 'developer' }); toast('Sekarang jadi Dev'); }); };
 window.doRemoveDev = function(uid) { showConfirm('Cabut akses Developer?', async () => { await updateDoc(doc(db, 'users', uid), { role: 'user' }); toast('Akses Dev Dicabut'); }); };
+
+// FITUR CENTANG BIRU BARU
+window.doVerify = function(uid) { showConfirm('Beri Centang Biru ke akun ini?', async () => { await updateDoc(doc(db, 'users', uid), { isVerified: true }); toast('Akun Terverifikasi!'); }); };
+window.doUnverify = function(uid) { showConfirm('Cabut Centang Biru?', async () => { await updateDoc(doc(db, 'users', uid), { isVerified: false }); toast('Centang Biru Dicabut'); }); };
+
 window.doDelUser = function(uid, name) {
   showConfirm(`Hapus permanen @${name}?`, async () => {
     await deleteDoc(doc(db, 'users', uid));
