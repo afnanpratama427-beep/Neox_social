@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pilih Jalur · Neox</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#f0f4f8;--fg:#111111;--acc:#ffe14d;--acc2:#ff5252;--card:#ffffff;--line:#111111;}
+  body{background-color:var(--bg);background-image:radial-gradient(#cbd5e1 2px,transparent 2px);background-size:20px 20px;color:var(--fg);font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:var(--card);border:4px solid var(--line);box-shadow:8px 8px 0 var(--line);padding:32px;width:100%;max-width:420px;text-align:center}
+  h1{font-size:22px;font-weight:900;line-height:1.4;margin-bottom:32px;text-transform:uppercase}
+  .btn{background:var(--acc);color:var(--line);border:4px solid var(--line);padding:16px;font-size:16px;font-weight:900;text-transform:uppercase;cursor:pointer;box-shadow:5px 5px 0 var(--line);font-family:inherit;width:100%;transition:transform .05s;margin-bottom:16px}
+  .btn:active{transform:translate(5px,5px);box-shadow:0 0 0 var(--line)}
+  .btn.admin{background:var(--acc2);color:#fff}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Halo Developer Neox<br>Pilih ingin ke jalur mana?</h1>
+  <button class="btn" onclick="location.href='public.html'">Neox Social</button>
+  <button class="btn admin" onclick="location.href='admin.html'">Developer Panel</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+const firebaseConfig = { apiKey: "AIzaSyBK7pa3LJCxF1bP5_SbEA_3wQo5280n1FY", authDomain: "nanzz-account.firebaseapp.com", projectId: "nanzz-account", storageBucket: "nanzz-account.firebasestorage.app", messagingSenderId: "592556282125", appId: "1:592556282125:web:6f3b4ec30e1a362c106044" };
+const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href = 'auth.html'; return; }
+  const snap = await getDoc(doc(db, 'users', user.uid));
+  // Proteksi: Kalau bukan dev, tendang ke public
+  if (!snap.exists() || (snap.data().role !== 'developer' && user.email !== "afnanpratama427@gmail.com")) {
+    location.href = 'public.html';
+  }
+});
+</script>
+</body>
+</html>
