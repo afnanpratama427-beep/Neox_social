@@ -68,7 +68,7 @@
     
     <div id="fileInputWrap">
       <div class="dropzone" onclick="document.getElementById('fileInput').click()">
-        <div class="big">⬇</div><div style="font-weight:900">PILIH FILE (MAX 20MB)</div>
+        <div class="big">⬇</div><div style="font-weight:900">PILIH FILE (MAX 2GB)</div>
         <input type="file" id="fileInput">
       </div>
       <div class="preview" id="preview"></div>
@@ -89,9 +89,10 @@
 
 <nav class="nav">
   <a href="public.html"><span class="ico">🏠</span>home</a>
-  <a href="public.html#tools"><span class="ico">🔧</span>tools</a>
+  <a href="public.html" onclick="switchView('tools')"><span class="ico">🔧</span>tools</a>
   <a class="plus" href="upload.html"><span class="ico">➕</span></a>
-  <a href="public.html#info"><span class="ico">👤</span>info</a>
+  <a href="public.html" onclick="switchView('settings')"><span class="ico">⚙️</span>setting</a>
+  <a href="public.html" onclick="switchView('info')"><span class="ico">👤</span>info</a>
 </nav>
 
 <script type="module">
@@ -103,8 +104,8 @@ const firebaseConfig = { apiKey: "AIzaSyBK7pa3LJCxF1bP5_SbEA_3wQo5280n1FY", auth
 const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
 let currentUser = null; let currentType = 'image'; let currentFile = null; 
-const MAX_SIZE = 20 * 1024 * 1024; // Limit 20MB (limit bot Telegram)
-const WORKER_URL = "https://neox-storage.afnanpratama427.workers.dev/";
+const MAX_SIZE = 2000 * 1024 * 1024; // Limit 2GB
+const WORKER_URL = "https://neox-storage.afnanpratama427.workers.dev/upload"; // FIX URL
 
 window.showMsg = function(t, type) { const m = document.getElementById('msg'); m.textContent = t; m.className = 'msg ' + type; setTimeout(() => m.className = 'msg', 4000); }
 window.pickType = function(el) {
@@ -116,7 +117,7 @@ window.pickType = function(el) {
 }
 document.getElementById('fileInput').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
-  if (f.size > MAX_SIZE) return showMsg('Max 20MB', 'err');
+  if (f.size > MAX_SIZE) return showMsg('Max 2GB', 'err');
   currentFile = f; const p = document.getElementById('preview'); p.className = 'preview on';
   p.innerHTML = `<div style="font-weight:900">${f.name}</div>`;
   if (currentType === 'image') p.innerHTML += `<img src="${URL.createObjectURL(f)}">`;
@@ -141,7 +142,6 @@ window.doUpload = async function() {
   else { 
     if (!currentFile) return showMsg('Pilih file', 'err'); 
     
-    // PROSES UPLOAD KE CLOUDFLARE WORKER LU
     const btn = document.getElementById('uploadBtn'); btn.disabled = true; btn.textContent = 'Uploading ke Storage...';
     const prog = document.getElementById('progBar'); prog.classList.add('on'); document.getElementById('progFill').style.width = '50%';
     
@@ -150,10 +150,16 @@ window.doUpload = async function() {
       formData.append('file', currentFile);
       
       const res = await fetch(WORKER_URL, { method: 'POST', body: formData });
-      if (!res.ok) throw new Error('Gagal upload ke Worker. Cek API lu.');
       
-      const data = await res.json();
-      payload.fileUrl = data.url; // URL file dari Telegram
+      // Handling anti-error JSON
+      const textData = await res.text();
+      let data;
+      try { data = JSON.parse(textData); } 
+      catch(e) { throw new Error('Worker ngembaliin teks, bukan JSON. Pastiin URL Worker /upload bener.'); }
+
+      if (!res.ok) throw new Error(data.message || 'Gagal upload ke Worker');
+      
+      payload.fileUrl = data.url; 
       payload.filename = currentFile.name; 
       payload.size = currentFile.size; 
       document.getElementById('progFill').style.width = '100%';
