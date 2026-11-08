@@ -4,6 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NEOX</title>
+<script>
+// === TAMBAHAN FIX 1: LOAD WARNA INSTAN BIAR GAK KEDIP PAS BARU MASUK ===
+(function(){
+  try{
+    const t = localStorage.getItem('neox_theme');
+    if(t){
+      document.documentElement.style.setProperty('--acc', t);
+    }
+  }catch(e){}
+})();
+</script>
 <style>
   /* FIX 1: PAKSA WARNA TERANG */
   :root{color-scheme:light;--bg:#f0f4f8;--fg:#111111;--acc:#ffe14d;--acc2:#ff5252;--acc3:#4dff88;--card:#ffffff;--line:#111111;}
@@ -85,6 +96,36 @@
   /* FIX 3: NOTIFIKASI TOAST KUNING */
   .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--acc);color:var(--line);border:4px solid var(--line);padding:12px 24px;font-weight:900;font-size:14px;box-shadow:6px 6px 0 var(--line);z-index:999;display:none;text-transform:uppercase}
   .toast.on{display:block}
+
+  /* === TAMBAHAN FIX 2: BIKIN SELECT JADI NEUBRUTALISM ASLI (ANTI HITAM) === */
+  #setTheme{
+    color-scheme: light !important;
+    background: var(--card) !important;
+    background-color: var(--card) !important;
+    color: var(--line) !important;
+    border:3px solid var(--line) !important;
+    box-shadow:3px 3px 0 var(--line) !important;
+    -webkit-appearance:none !important;
+    -moz-appearance:none !important;
+    appearance:none !important;
+    font-weight:900 !important;
+  }
+  #setTheme option{
+    background: #ffffff !important;
+    color: #111111 !important;
+    font-weight:900;
+    padding:12px;
+  }
+  /* === TAMBAHAN FIX 3: CUSTOM PICKER NEUBRUTALISM (TANPA HAPUS SELECT ASLI) === */
+  .theme-picker{position:relative;border:3px solid var(--line);background:var(--card);box-shadow:3px 3px 0 var(--line);margin-top:8px}
+  .theme-current{display:flex;align-items:center;gap:10px;padding:12px;font-weight:900;cursor:pointer;background:var(--card)}
+  .theme-dot{width:22px;height:22px;border:3px solid var(--line);display:inline-block;box-shadow:2px 2px 0 var(--line)}
+  .theme-options{display:none;position:absolute;top:100%;left:-3px;right:-3px;background:var(--card);border:3px solid var(--line);border-top:none;box-shadow:4px 4px 0 var(--line);z-index:20}
+  .theme-options.on{display:block}
+  .theme-opt{padding:12px;display:flex;align-items:center;gap:10px;font-weight:900;cursor:pointer;border-top:3px solid var(--line);background:var(--card);color:var(--line)}
+  .theme-opt span{width:22px;height:22px;border:3px solid var(--line);display:inline-block;box-shadow:2px 2px 0 var(--line)}
+  .theme-opt:hover{background:var(--bg)}
+  .theme-opt.on{background:var(--acc)}
 </style>
 </head>
 <body>
@@ -131,6 +172,20 @@
           <option value="#4dff88">Hijau</option>
           <option value="#4d9fff">Biru</option>
         </select>
+        <!-- TAMBAHAN: PICKER NEUBRUTALISM CUSTOM (TIDAK MENGHAPUS SELECT ASLI DI ATAS) -->
+        <div class="theme-picker" id="themePicker">
+          <div class="theme-current" onclick="toggleThemePicker()">
+            <div class="theme-dot" id="currentDot" style="background:#ffe14d"></div>
+            <span id="currentThemeText">Kuning (Default)</span>
+            <span style="margin-left:auto;font-size:12px">▼</span>
+          </div>
+          <div class="theme-options" id="themeOptions">
+            <div class="theme-opt on" data-value="#ffe14d" onclick="pickTheme('#ffe14d','Kuning (Default)',this)"><span style="background:#ffe14d"></span>Kuning (Default)</div>
+            <div class="theme-opt" data-value="#ff5252" onclick="pickTheme('#ff5252','Merah',this)"><span style="background:#ff5252"></span>Merah</div>
+            <div class="theme-opt" data-value="#4dff88" onclick="pickTheme('#4dff88','Hijau',this)"><span style="background:#4dff88"></span>Hijau</div>
+            <div class="theme-opt" data-value="#4d9fff" onclick="pickTheme('#4d9fff','Biru',this)"><span style="background:#4d9fff"></span>Biru</div>
+          </div>
+        </div>
       </div>
       
       <button class="btn" onclick="saveProfile()">simpan perubahan</button>
@@ -187,10 +242,20 @@ onAuthStateChanged(auth, async (user) => {
   if (!snap.exists() || snap.data().banned) { location.href = 'auth.html'; return; }
   
   currentUser = { uid: user.uid, ...snap.data() };
-  if(currentUser.theme) document.documentElement.style.setProperty('--acc', currentUser.theme);
+  if(currentUser.theme) {
+    document.documentElement.style.setProperty('--acc', currentUser.theme);
+    try{localStorage.setItem('neox_theme', currentUser.theme);}catch(e){}
+  }
   
   onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
-    if(docSnap.exists()) { currentUser = { uid: user.uid, ...docSnap.data() }; renderProfile(); }
+    if(docSnap.exists()) { 
+      currentUser = { uid: user.uid, ...docSnap.data() }; 
+      if(currentUser.theme){
+        document.documentElement.style.setProperty('--acc', currentUser.theme);
+        try{localStorage.setItem('neox_theme', currentUser.theme);}catch(e){}
+      }
+      renderProfile(); 
+    }
   });
 
   unsubUsers.push(onSnapshot(collection(db, 'users'), (userSnap) => {
@@ -305,6 +370,19 @@ function renderProfile() {
   document.getElementById('setPass').value = currentUser.pass || ''; 
   document.getElementById('setTheme').value = currentUser.theme || '#ffe14d';
   
+  // === TAMBAHAN: SYNC CUSTOM PICKER DENGAN SELECT ASLI ===
+  try{
+    const themeMap = {'#ffe14d':'Kuning (Default)','#ff5252':'Merah','#4dff88':'Hijau','#4d9fff':'Biru'};
+    const cur = currentUser.theme || '#ffe14d';
+    const dot = document.getElementById('currentDot');
+    const txt = document.getElementById('currentThemeText');
+    if(dot) dot.style.background = cur;
+    if(txt) txt.textContent = themeMap[cur] || cur;
+    document.querySelectorAll('.theme-opt').forEach(o=>{
+      o.classList.toggle('on', o.getAttribute('data-value')===cur);
+    });
+  }catch(e){}
+
   if(currentUser.photo) {
     document.getElementById('infoAvatar').src = currentUser.photo;
     document.getElementById('infoAvatar').style.display = 'block';
@@ -317,6 +395,28 @@ function renderProfile() {
 
 window.changeTheme = function(color) {
   document.documentElement.style.setProperty('--acc', color);
+  try{localStorage.setItem('neox_theme', color);}catch(e){}
+  // sync select asli
+  const sel = document.getElementById('setTheme');
+  if(sel) sel.value = color;
+}
+
+// === TAMBAHAN: FUNGSI PICKER NEUBRUTALISM ===
+window.toggleThemePicker = function(){
+  const opt = document.getElementById('themeOptions');
+  if(opt) opt.classList.toggle('on');
+}
+window.pickTheme = function(color, label, el){
+  document.getElementById('setTheme').value = color;
+  const dot = document.getElementById('currentDot');
+  const txt = document.getElementById('currentThemeText');
+  if(dot) dot.style.background = color;
+  if(txt) txt.textContent = label;
+  document.querySelectorAll('.theme-opt').forEach(o=>o.classList.remove('on'));
+  if(el) el.classList.add('on');
+  const optBox = document.getElementById('themeOptions');
+  if(optBox) optBox.classList.remove('on');
+  changeTheme(color);
 }
 
 window.saveProfile = async function() {
@@ -333,6 +433,7 @@ window.saveProfile = async function() {
 
   try {
     await updateDoc(doc(db, 'users', currentUser.uid), updateData);
+    try{localStorage.setItem('neox_theme', newTheme);}catch(e){}
     toast('PROFIL DISIMPAN!');
     pendingPhotoBase64 = null;
   } catch(e) { toast(e.message); }
