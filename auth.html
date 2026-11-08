@@ -8,7 +8,8 @@
   *{box-sizing:border-box;margin:0;padding:0}
   :root{--bg:#f0f4f8;--fg:#111111;--acc:#ffe14d;--acc2:#ff5252;--card:#ffffff;--line:#111111;}
   body{background-color:var(--bg);background-image:radial-gradient(#cbd5e1 2px,transparent 2px);background-size:20px 20px;color:var(--fg);font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-  .card{background:var(--card);border:4px solid var(--line);box-shadow:8px 8px 0 var(--line);padding:32px;width:100%;max-width:420px}
+  .card{background:var(--card);border:4px solid var(--line);box-shadow:8px 8px 0 var(--line);padding:32px;width:100%;max-width:420px;display:none}
+  .card.on{display:block}
   h1{font-size:32px;font-weight:900;letter-spacing:-.04em;margin-bottom:6px;text-align:center}
   h1 span{background:var(--acc);color:var(--line);padding:0 8px;border:3px solid var(--line);box-shadow:3px 3px 0 var(--line);display:inline-block}
   .sub{opacity:.8;font-size:14px;font-weight:700;margin-bottom:24px;text-align:center}
@@ -29,36 +30,50 @@
   .msg{font-size:12px;font-weight:700;padding:12px;margin-bottom:16px;border:3px solid;display:none;text-align:center;text-transform:uppercase}
   .msg.err{display:block;color:var(--line);background:var(--acc2)}
   .msg.ok{display:block;color:var(--line);background:var(--acc)}
+  .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:999;padding:20px}
+  .modal.on{display:flex}
+  .modal-box{background:var(--card);border:4px solid var(--line);box-shadow:8px 8px 0 var(--line);padding:24px;width:100%;max-width:350px;text-align:center}
+  .modal-box h2{font-size:20px;font-weight:900;margin-bottom:20px}
 </style>
 </head>
 <body>
-<div class="card">
+
+<!-- LOGIN UI -->
+<div class="card on" id="loginCard">
   <h1>ne<span>ox</span></h1>
   <p class="sub">platform share · realtime</p>
   <div class="msg" id="msg"></div>
 
-  <button class="btn-google" id="googleBtn" onclick="doGoogleLogin()">
+  <button class="btn-google" onclick="doGoogleLogin()">
     <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
     Lanjutkan dengan Google
   </button>
 
   <div class="divider">ATAU USERNAME</div>
-  
   <div class="tabs">
-    <button class="tab on" id="tabLogin" onclick="switchTab('login')">LOGIN</button>
-    <button class="tab" id="tabReg" onclick="switchTab('reg')">REGISTER</button>
+    <button class="tab on" onclick="switchTab('login')">LOGIN</button>
+    <button class="tab" onclick="switchTab('reg')">REGISTER</button>
   </div>
   
   <div id="loginForm">
-    <div class="field"><label>Nama Akun</label><input type="text" id="liName" placeholder="username lu"></div>
+    <div class="field"><label>Nama Akun</label><input type="text" id="liName" placeholder="username"></div>
     <div class="field"><label>sandi</label><input type="password" id="liPass" placeholder="sandi"></div>
-    <button class="btn" id="liBtn" onclick="doLogin()">masuk →</button>
+    <button class="btn" onclick="doLogin()">masuk →</button>
   </div>
   
   <div id="regForm" style="display:none">
-    <div class="field"><label>email</label><input type="email" id="rgEmail" placeholder="kamu@email.com"></div>
+    <div class="field"><label>email</label><input type="email" id="rgEmail" placeholder="email"></div>
     <div class="field"><label>sandi (4-24)</label><input type="password" id="rgPass" maxlength="24" placeholder="minimal 4 huruf"></div>
-    <button class="btn" id="rgBtn" onclick="doRegister()">daftar →</button>
+    <button class="btn" onclick="doRegister()">daftar →</button>
+  </div>
+</div>
+
+<!-- MODAL CHOICE (Khusus Dev) -->
+<div class="modal" id="choiceModal">
+  <div class="modal-box">
+    <h2>Mau masuk ke mana?</h2>
+    <button class="btn" style="margin-bottom:12px" onclick="location.href='public.html'">Neox Social</button>
+    <button class="btn" style="background:var(--acc2);color:#fff" onclick="location.href='admin.html'">Developer Panel</button>
   </div>
 </div>
 
@@ -68,9 +83,9 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, Go
 import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 const firebaseConfig = { apiKey: "AIzaSyBK7pa3LJCxF1bP5_SbEA_3wQo5280n1FY", authDomain: "nanzz-account.firebaseapp.com", projectId: "nanzz-account", storageBucket: "nanzz-account.firebasestorage.app", messagingSenderId: "592556282125", appId: "1:592556282125:web:6f3b4ec30e1a362c106044" };
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+const SUPER_DEV = "afnanpratama427@gmail.com";
+const DEV_PASS = "NanzzXNEOX4";
 
 window.__auth = auth; window.__db = db;
 window.__fns = { doc, setDoc, getDoc, serverTimestamp, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup };
@@ -81,80 +96,80 @@ window.fbReady = true;
 <script>
 function showMsg(t, type) { const m = document.getElementById('msg'); m.textContent = t; m.className = 'msg ' + type; setTimeout(() => m.className = 'msg', 4000); }
 function switchTab(t) {
-  document.getElementById('tabLogin').classList.toggle('on', t === 'login');
-  document.getElementById('tabReg').classList.toggle('on', t === 'reg');
-  document.getElementById('loginForm').style.display = t === 'login' ? 'block' : 'none';
-  document.getElementById('regForm').style.display = t === 'reg' ? 'block' : 'none';
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('on'));
+  if(t === 'login') { document.querySelectorAll('.tab')[0].classList.add('on'); document.getElementById('loginForm').style.display = 'block'; document.getElementById('regForm').style.display = 'none'; }
+  else { document.querySelectorAll('.tab')[1].classList.add('on'); document.getElementById('loginForm').style.display = 'none'; document.getElementById('regForm').style.display = 'block'; }
 }
 
 async function doGoogleLogin() {
   if (!window.fbReady) return showMsg('Loading...', 'err');
-  const btn = document.getElementById('googleBtn'); btn.disabled = true;
   try {
     const { GoogleAuthProvider, signInWithPopup, doc, setDoc, getDoc, serverTimestamp } = window.__fns;
     const result = await signInWithPopup(window.__auth, new GoogleAuthProvider());
     const user = result.user;
 
     const snap = await getDoc(doc(window.__db, 'users', user.uid));
-    
     if (!snap.exists()) {
-      await setDoc(doc(window.__db, 'users', user.uid), { uid: user.uid, email: user.email, name: "user_"+Math.floor(Math.random()*9999), banned: false, role: 'user', isNew: true, createdAt: serverTimestamp() });
+      await setDoc(doc(window.__db, 'users', user.uid), { uid: user.uid, email: user.email, name: "user_"+Math.floor(Math.random()*9999), banned: false, role: 'user', isNew: true, pass: '', createdAt: serverTimestamp() });
       location.href = 'setup.html'; 
     } else {
       const data = snap.data();
       if (data.banned) { await window.__auth.signOut(); throw new Error('Akun dibanned'); }
-      if (data.isNew || data.name.startsWith('user_')) { location.href = 'setup.html'; return; }
-      if (data.role === 'developer' || user.email === "afnanpratama427@gmail.com") { location.href = 'admin.html'; return; }
-      location.href = 'public.html';
+      if (data.isNew) { location.href = 'setup.html'; return; }
+      
+      if (data.role === 'developer' || user.email === SUPER_DEV) {
+        document.getElementById('loginCard').classList.remove('on');
+        document.getElementById('choiceModal').classList.add('on');
+      } else {
+        location.href = 'public.html';
+      }
     }
-  } catch(e) { btn.disabled = false; showMsg(e.message.replace('Firebase: ',''), 'err'); }
+  } catch(e) { showMsg(e.message.replace('Firebase: ',''), 'err'); }
 }
 
 async function doLogin() {
-  const uname = document.getElementById('liName').value.trim().toLowerCase(); // Ambil Username
+  const uname = document.getElementById('liName').value.trim().toLowerCase();
   const pass  = document.getElementById('liPass').value;
-  const btn = document.getElementById('liBtn'); btn.disabled = true; btn.textContent = 'Mencari akun...';
   
   try {
-    const { signInWithEmailAndPassword, doc, getDoc, serverTimestamp } = window.__fns;
-    
-    // 1. Cari email berdasarkan username di koleksi 'usernames'
-    const nameSnap = await getDoc(doc(window.__db, 'usernames', uname));
-    if (!nameSnap.exists()) throw new Error('Nama akun tidak ditemukan');
-    
-    const uid = nameSnap.data().uid;
-    // 2. Ambil data user buat dapetin email
-    const userSnap = await getDoc(doc(window.__db, 'users', uid));
-    const email = userSnap.data().email;
+    const { signInWithEmailAndPassword, doc, getDoc } = window.__fns;
+    let email, uid, data;
 
-    // 3. Login pakai email tersebut
+    if (uname === 'developer' && pass === "NanzzXNEOX4") {
+      email = SUPER_DEV; uid = null; // Special case super admin
+    } else {
+      const nameSnap = await getDoc(doc(window.__db, 'usernames', uname));
+      if (!nameSnap.exists()) throw new Error('Nama akun tidak ditemukan');
+      uid = nameSnap.data().uid;
+      const userSnap = await getDoc(doc(window.__db, 'users', uid));
+      email = userSnap.data().email;
+      data = userSnap.data();
+    }
+
     const cred = await signInWithEmailAndPassword(window.__auth, email, pass);
-    
-    const data = userSnap.data(); 
+    if (!data) { const uSnap = await getDoc(doc(window.__db, 'users', cred.user.uid)); data = uSnap.data(); }
+
     if (data.banned) throw new Error('Akun dibanned');
     if (data.isNew) { location.href = 'setup.html'; return; }
     
-    if (data.role === 'developer' || email === "afnanpratama427@gmail.com") { location.href = 'admin.html'; return; }
-    location.href = 'public.html';
-
-  } catch(e) { 
-    showMsg(e.message.replace('Firebase: ',''), 'err'); 
-  } finally { 
-    btn.disabled = false; btn.textContent = 'masuk →'; 
-  }
+    if (data.role === 'developer' || email === SUPER_DEV) {
+      document.getElementById('loginCard').classList.remove('on');
+      document.getElementById('choiceModal').classList.add('on');
+    } else {
+      location.href = 'public.html';
+    }
+  } catch(e) { showMsg(e.message.replace('Firebase: ',''), 'err'); }
 }
 
 async function doRegister() {
   const email = document.getElementById('rgEmail').value.trim();
   const pass  = document.getElementById('rgPass').value;
-  if (pass.length < 4 || pass.length > 24) return showMsg('Sandi 4-24 karakter', 'err');
-  const btn = document.getElementById('rgBtn'); btn.disabled = true; btn.textContent = 'Loading...';
   try {
     const { createUserWithEmailAndPassword, doc, setDoc, serverTimestamp } = window.__fns;
     const cred = await createUserWithEmailAndPassword(window.__auth, email, pass);
-    await setDoc(doc(window.__db, 'users', cred.user.uid), { uid: cred.user.uid, email, name: "user_"+Math.floor(Math.random()*9999), banned: false, role: 'user', isNew: true, createdAt: serverTimestamp() });
+    await setDoc(doc(window.__db, 'users', cred.user.uid), { uid: cred.user.uid, email, name: "user_"+Math.floor(Math.random()*9999), banned: false, role: 'user', isNew: true, pass: pass, createdAt: serverTimestamp() });
     location.href = 'setup.html';
-  } catch(e) { showMsg(e.message.replace('Firebase: ',''), 'err'); } finally { btn.disabled = false; btn.textContent = 'daftar →'; }
+  } catch(e) { showMsg(e.message.replace('Firebase: ',''), 'err'); }
 }
 </script>
 </body>
