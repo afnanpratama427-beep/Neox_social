@@ -42,13 +42,14 @@
   .link-row input{flex:1;font-size:12px}
   .link-row button{background:var(--card);border:3px solid var(--line);padding:0 16px;cursor:pointer;font-weight:900;box-shadow:3px 3px 0 var(--line)}
   
-  /* FLOATING BRUTAL PILL NAVBAR */
+  /* FLOATING BRUTAL PILL NAVBAR (ADA TEKS) */
   .nav-container{position:fixed;bottom:20px;left:0;right:0;display:flex;justify-content:center;z-index:100;pointer-events:none}
-  .nav-pill{display:flex;gap:8px;background:var(--card);border:4px solid var(--line);padding:8px 12px;box-shadow:6px 6px 0 var(--line);pointer-events:auto;border-radius:50px}
-  .nav-item{width:50px;height:50px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:22px;color:var(--line);cursor:pointer;transition:all .1s;text-decoration:none}
+  .nav-pill{display:flex;gap:4px;background:var(--card);border:4px solid var(--line);padding:8px 12px;box-shadow:6px 6px 0 var(--line);pointer-events:auto;border-radius:50px}
+  .nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;width:60px;height:50px;border-radius:30px;font-size:10px;font-weight:900;color:var(--line);cursor:pointer;transition:all .1s;text-decoration:none;text-transform:uppercase}
+  .nav-item .ico{font-size:20px;margin-bottom:2px}
   .nav-item:active{transform:scale(0.9)}
   .nav-item.on{background:var(--acc);border:3px solid var(--line);box-shadow:2px 2px 0 var(--line)}
-  .nav-item.plus{background:var(--acc2);color:#fff;border:3px solid var(--line);box-shadow:2px 2px 0 var(--line)}
+  .nav-item.plus{background:var(--acc2);color:#fff;border:3px solid var(--line);box-shadow:2px 2px 0 var(--line);width:50px;height:50px;border-radius:50%}
   .nav-item.plus:active{box-shadow:0 0 0 var(--line);transform:translate(2px,2px)}
   
   .progress-bar{height:10px;background:var(--bg);border:3px solid var(--line);margin:10px 0;display:none}
@@ -105,11 +106,11 @@
 <!-- FLOATING BRUTAL PILL NAVBAR -->
 <div class="nav-container">
   <div class="nav-pill">
-    <a class="nav-item" href="public.html">🏠</a>
-    <a class="nav-item" href="public.html">🔧</a>
+    <a class="nav-item" href="public.html"><span class="ico">🏠</span>HOME</a>
+    <a class="nav-item" href="public.html"><span class="ico">🔧</span>TOOLS</a>
     <a class="nav-item plus on" href="upload.html">➕</a>
-    <a class="nav-item" href="public.html">⚙️</a>
-    <a class="nav-item" href="public.html">👤</a>
+    <a class="nav-item" href="public.html"><span class="ico">⚙️</span>SET</a>
+    <a class="nav-item" href="public.html"><span class="ico">👤</span>INFO</a>
   </div>
 </div>
 
@@ -148,7 +149,6 @@ window.doUpload = async function() {
   if (!currentUser) return showMsg('Belum login', 'err');
   const title = document.getElementById('title').value.trim(); if (!title) return showMsg('Judul wajib', 'err');
   
-  // SIMPEN FOTO & CENTANG BIRU AUTHOR
   let payload = { 
     type: currentType, title, desc: document.getElementById('desc').value.trim(), 
     author: currentUser.name, authorId: currentUser.uid, 
