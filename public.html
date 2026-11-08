@@ -3,16 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Neox</title>
+<title>NEOX</title>
 <style>
   :root{color-scheme:light;--bg:#f0f4f8;--fg:#111111;--acc:#ffe14d;--acc2:#ff5252;--acc3:#4dff88;--card:#ffffff;--line:#111111;}
   *{box-sizing:border-box;margin:0;padding:0}
   body{background-color:var(--bg);background-image:radial-gradient(#cbd5e1 2px,transparent 2px);background-size:20px 20px;color:var(--fg);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding-bottom:100px;}
   .wrap{max-width:640px;margin:0 auto;padding:16px}
   .top{display:flex;justify-content:space-between;align-items:center;padding:12px 0;margin-bottom:16px;gap:8px}
-  .logo{font-size:22px;font-weight:900;border:3px solid var(--line);background:var(--card);padding:4px 10px;box-shadow:4px 4px 0 var(--line)}
-  .logo span{background:var(--acc);padding:0 4px;border:2px solid var(--line)}
-  .search{flex:1}.search input{width:100%;background:var(--card);color:var(--fg);border:3px solid var(--line);padding:10px;font-family:inherit;font-weight:700;box-shadow:4px 4px 0 var(--line);outline:none}
+  
+  .logo-wrap{display:flex;align-items:center;gap:4px}
+  .logo{font-size:22px;font-weight:900;border:3px solid var(--line);background:var(--card);padding:4px 10px;box-shadow:4px 4px 0 var(--line);display:flex;align-items:center}
+  .logo span{background:var(--acc);padding:0 4px;border:2px solid var(--line);margin-left:2px}
+  .header-verify{background:#1877F2;color:white;border-radius:50%;padding:2px 6px;font-weight:bold;font-size:12px;border:2px solid var(--line);box-shadow:2px 2px 0 var(--line)}
+  
+  .search{flex:1;margin-left:8px}.search input{width:100%;background:var(--card);color:var(--fg);border:3px solid var(--line);padding:10px;font-family:inherit;font-weight:700;box-shadow:4px 4px 0 var(--line);outline:none}
+  
   .card{background:var(--card);border:4px solid var(--line);box-shadow:8px 8px 0 var(--line);padding:20px;margin-bottom:24px}
   .card h2{font-size:14px;text-transform:uppercase;font-weight:900;color:var(--line);margin-bottom:16px;border-bottom:3px solid var(--line);padding-bottom:10px;letter-spacing:1px}
   
@@ -20,7 +25,7 @@
   .author-wrap{display:flex;align-items:center;gap:8px}
   .author-avatar{width:32px;height:32px;background:var(--acc);border:2px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;object-fit:cover}
   .post-author{font-size:14px;font-weight:900;background:var(--acc);padding:2px 8px;border:2px solid var(--line);box-shadow:2px 2px 0 var(--line);display:flex;align-items:center;gap:4px}
-  .verified-badge{width:16px;height:16px;fill:#1DA1F2;}
+  .post-verify{background:#1877F2;color:white;border-radius:50%;padding:2px 6px;font-weight:bold;font-size:10px;}
   
   .post-code{font-family:monospace;font-size:12px;background:var(--fg);border:2px solid var(--line);padding:4px 8px;color:var(--acc);font-weight:900;cursor:pointer;box-shadow:2px 2px 0 var(--acc)}
   .post-title{font-size:18px;font-weight:900;margin-bottom:8px}
@@ -33,7 +38,6 @@
   .action-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--line)}
   .action-btn.danger{background:var(--acc2);color:#fff}
   .action-btn.share{background:var(--acc)}
-  
   .comment-box{margin-top:16px;padding-top:16px;border-top:3px dashed var(--line)}
   .comment-item{font-size:13px;font-weight:600;margin-bottom:8px;padding:8px;background:var(--bg);border:2px solid var(--line)}
   .comment-item b{font-weight:900;color:var(--line)}
@@ -73,7 +77,10 @@
 <body>
 <div class="wrap">
   <div class="top">
-    <div class="logo">ne<span>ox</span></div>
+    <div class="logo-wrap">
+      <div class="logo">NE<span>OX</span></div>
+      <div class="header-verify">✓</div>
+    </div>
     <div class="search"><input type="text" id="searchInput" placeholder="cari postingan..."></div>
   </div>
   
@@ -149,7 +156,10 @@ onAuthStateChanged(auth, async (user) => {
   const snap = await getDoc(doc(db, 'users', user.uid));
   if (!snap.exists() || snap.data().banned) { location.href = 'auth.html'; return; }
   
+  // Developer dibolehin masuk ke publik juga
   currentUser = { uid: user.uid, ...snap.data() };
+  if(currentUser.theme) document.documentElement.style.setProperty('--acc', currentUser.theme);
+  
   onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
     if(docSnap.exists()) { currentUser = { uid: user.uid, ...docSnap.data() }; renderProfile(); }
   });
@@ -162,17 +172,17 @@ function loadFeed() {
   unsubFeed = onSnapshot(q1, snap => { allPosts = []; snap.forEach(d => allPosts.push({code: d.id, ...d.data()})); renderFeed(); });
 }
 
-const verifySVG = `<svg class="verified-badge" viewBox="0 0 24 24"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.918-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.337 2.25c-.416-.165-.866-.25-1.336-.25-2.21 0-3.918 1.79-3.918 4 0 .495.084.965.238 1.4-1.273.65-2.148 2.02-2.148 3.6 0 1.46.742 2.74 1.86 3.46-.153.43-.236.89-.236 1.36 0 2.21 1.71 4 3.918 4 .47 0 .92-.086 1.336-.25.52 1.33 1.827 2.25 3.337 2.25s2.816-.918 3.337-2.25c.416.165.866.25 1.336.25 2.208 0 3.918-1.79 3.918-4 0-.47-.083-.93-.236-1.36 1.118-.72 1.86-2 1.86-3.46zM10.75 16.75l-3.5-3.5 1.41-1.41 2.09 2.09 5.09-5.09 1.41 1.41-6.5 6.5z"/></svg>`;
-
 function renderFeed() {
   let posts = allPosts;
   const f = document.getElementById('searchInput').value.toLowerCase();
   if (f) posts = posts.filter(p => (p.title||'').toLowerCase().includes(f) || (p.author||'').toLowerCase().includes(f));
   
   document.getElementById('feed').innerHTML = posts.map(p => {
-    // Nentuin Centang Biru
-    const isDev = p.author === "Developer" || p.authorId === "superdev" || p.authorRole === "developer";
-    // Avatar fallback
+    // Centang Biru Pake HTML
+    const isDev = p.author === "Developer" || p.authorRole === "developer";
+    const verifyHtml = isDev ? `<span class="post-verify">✓</span>` : '';
+    
+    // Avatar di Feed
     const avatarHtml = p.authorPhoto 
       ? `<img src="${p.authorPhoto}" class="author-avatar">` 
       : `<div class="author-avatar">${p.author.charAt(0).toUpperCase()}</div>`;
@@ -182,7 +192,7 @@ function renderFeed() {
       <div class="post-head">
         <div class="author-wrap">
           ${avatarHtml}
-          <div class="post-author">@${p.author} ${isDev ? verifySVG : ''}</div>
+          <div class="post-author">@${p.author} ${verifyHtml}</div>
         </div>
         <div class="post-code" onclick="navigator.clipboard.writeText('${p.code}');toast('Code dicopy')">${p.code}</div>
       </div>
@@ -229,7 +239,7 @@ window.sharePost = function(code) {
 }
 window.delPost = async function(code) { if(!confirm('Hapus postingan?')) return; await deleteDoc(doc(db, 'posts', code)); toast('Dihapus'); }
 
-// ==== UPDATE PROFILE (FOTO & PASSWORD) ====
+// ==== UPDATE PROFILE ====
 document.getElementById('setPhoto').addEventListener('change', function(e) {
   const file = e.target.files[0]; if(!file) return;
   if(file.size > 500 * 1024) return toast('Max 500KB');
@@ -278,7 +288,7 @@ window.saveProfile = async function() {
   } catch(e) { toast(e.message); }
 }
 
-// ==== TOOLS & GAME (FIX TTT) ====
+// ==== TOOLS & GAME ====
 window.openTool = function(t) {
   const res = document.getElementById('toolResult'); res.style.display = 'block';
   if(t === 'calc') {
