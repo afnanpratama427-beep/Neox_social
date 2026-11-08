@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lengkapi Profil · Neox</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#f0f4f8;--fg:#111111;--acc:#ffe14d;--acc2:#ff5252;--card:#ffffff;--line:#111111;}
+  body{background-color:var(--bg);background-image:radial-gradient(#cbd5e1 2px,transparent 2px);background-size:20px 20px;color:var(--fg);font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:var(--card);border:4px solid var(--line);box-shadow:8px 8px 0 var(--line);padding:32px;width:100%;max-width:420px}
+  h1{font-size:24px;font-weight:900;margin-bottom:6px;text-align:center}
+  .sub{opacity:.8;font-size:14px;font-weight:700;margin-bottom:24px;text-align:center}
+  .avatar-prev{width:100px;height:100px;background:var(--acc);border:4px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:900;color:var(--line);object-fit:cover;box-shadow:4px 4px 0 var(--line);margin:0 auto 16px}
+  .field{margin-bottom:16px} label{display:block;font-size:12px;text-transform:uppercase;margin-bottom:6px;font-weight:900}
+  input[type=text],textarea,select{width:100%;background:var(--card);color:var(--line);border:3px solid var(--line);padding:12px;font-family:inherit;font-size:14px;font-weight:600;box-shadow:3px 3px 0 var(--line);outline:none;transition:all .1s}
+  input[type=file]{width:100%;font-size:12px;font-weight:900;padding:10px;border:3px dashed var(--line);background:var(--bg);cursor:pointer}
+  .btn{background:var(--acc);color:var(--line);border:4px solid var(--line);padding:14px;font-size:14px;font-weight:900;text-transform:uppercase;cursor:pointer;box-shadow:5px 5px 0 var(--line);font-family:inherit;width:100%;transition:transform .05s}
+  .btn:active{transform:translate(5px,5px);box-shadow:0 0 0 var(--line)}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Lengkapi Profil</h1>
+  <p class="sub">Bikin Nama Akun (Username) & Bio lu</p>
+
+  <img id="prevAvatar" class="avatar-prev" src="" style="display:none;">
+  <div id="prevAvatarText" class="avatar-prev">A</div>
+
+  <div class="field">
+    <label>Foto Profil (Max 500KB)</label>
+    <input type="file" id="photoInput" accept="image/*">
+  </div>
+  <div class="field">
+    <label>Nama Akun / Username (8-32)</label>
+    <input type="text" id="nameInput" maxlength="32" placeholder="minimal 8 huruf">
+  </div>
+  <div class="field">
+    <label>Bio Singkat</label>
+    <textarea id="bioInput" maxlength="100" rows="2" placeholder="Halo, gua pengguna baru Neox!"></textarea>
+  </div>
+  <button class="btn" id="saveBtn" onclick="saveProfile()">Simpan & Lanjut →</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+const firebaseConfig = { apiKey: "AIzaSyBK7pa3LJCxF1bP5_SbEA_3wQo5280n1FY", authDomain: "nanzz-account.firebaseapp.com", projectId: "nanzz-account", storageBucket: "nanzz-account.firebasestorage.app", messagingSenderId: "592556282125", appId: "1:592556282125:web:6f3b4ec30e1a362c106044" };
+const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+let currentUser = null; let photoBase64 = null;
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href = 'auth.html'; return; }
+  const snap = await getDoc(doc(db, 'users', user.uid));
+  if (!snap.exists()) { location.href = 'auth.html'; return; }
+  currentUser = { uid: user.uid, ...snap.data() };
+  
+  if (!currentUser.isNew && !currentUser.name.startsWith('user_')) { 
+    if (currentUser.role === 'developer' || currentUser.email === "afnanpratama427@gmail.com") location.href = 'admin.html';
+    else location.href = 'public.html';
+    return; 
+  }
+});
+
+document.getElementById('photoInput').addEventListener('change', function(e) {
+  const file = e.target.files[0]; if(!file) return;
+  if(file.size > 500 * 1024) return alert('Max 500KB');
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    photoBase64 = ev.target.result;
+    document.getElementById('prevAvatar').src = photoBase64;
+    document.getElementById('prevAvatar').style.display = 'block';
+    document.getElementById('prevAvatarText').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+});
+
+window.saveProfile = async function() {
+  const name = document.getElementById('nameInput').value.trim();
+  const bio = document.getElementById('bioInput').value.trim();
+  if (name.length < 8) return alert('Nama minimal 8 karakter');
+  
+  const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.textContent = 'Menyimpan...';
+
+  try {
+    const nc = await getDoc(doc(db, 'usernames', name.toLowerCase()));
+    if (nc.exists() && nc.data().uid !== currentUser.uid) {
+      throw new Error('Nama sudah dipakai orang lain, cari yang lain.');
+    }
+
+    let updateData = { name: name, bio: bio, isNew: false, role: currentUser.role || 'user' };
+    if (photoBase64) updateData.photo = photoBase64;
+
+    await updateDoc(doc(db, 'users', currentUser.uid), updateData);
+    // Simpan username ke database biar bisa dipakai buat login
+    await setDoc(doc(db, 'usernames', name.toLowerCase()), { uid: currentUser.uid, name: name });
+
+    alert('Profil berhasil disimpan!');
+    
+    if (currentUser.role === 'developer' || currentUser.email === "afnanpratama427@gmail.com") { location.href = 'admin.html'; }
+    else { location.href = 'public.html'; }
+
+  } catch(e) {
+    alert(e.message);
+    btn.disabled = false; btn.textContent = 'Simpan & Lanjut →';
+  }
+};
+</script>
+</body>
+</html>
