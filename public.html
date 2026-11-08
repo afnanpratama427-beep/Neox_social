@@ -7,7 +7,7 @@
 <style>
   :root{color-scheme:light;--bg:#f0f4f8;--fg:#111111;--acc:#ffe14d;--acc2:#ff5252;--acc3:#4dff88;--card:#ffffff;--line:#111111;}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background-color:var(--bg);background-image:radial-gradient(#cbd5e1 2px,transparent 2px);background-size:20px 20px;color:var(--fg);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding-bottom:100px;}
+  body{background-color:var(--bg);background-image:radial-gradient(#cbd5e1 2px,transparent 2px);background-size:20px 20px;color:var(--fg);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding-bottom:120px;}
   .wrap{max-width:640px;margin:0 auto;padding:16px}
   .top{display:flex;justify-content:space-between;align-items:center;padding:12px 0;margin-bottom:16px;gap:8px}
   
@@ -38,6 +38,7 @@
   .action-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--line)}
   .action-btn.danger{background:var(--acc2);color:#fff}
   .action-btn.share{background:var(--acc)}
+  
   .comment-box{margin-top:16px;padding-top:16px;border-top:3px dashed var(--line)}
   .comment-item{font-size:13px;font-weight:600;margin-bottom:8px;padding:8px;background:var(--bg);border:2px solid var(--line)}
   .comment-item b{font-weight:900;color:var(--line)}
@@ -64,11 +65,15 @@
   .btn{background:var(--acc);color:var(--line);border:4px solid var(--line);padding:14px;font-size:14px;font-weight:900;cursor:pointer;box-shadow:5px 5px 0 var(--line);width:100%;transition:transform .05s}
   .btn:active{transform:translate(5px,5px);box-shadow:0 0 0 var(--line)}
   
-  .nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:4px solid var(--line);display:flex;z-index:100;padding:8px;gap:8px;justify-content:space-between}
-  .nav a{flex:1;text-align:center;padding:8px 4px;color:var(--line);font-size:11px;font-weight:900;text-transform:uppercase;cursor:pointer;border:3px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none}
-  .nav a .ico{font-size:22px;margin-bottom:4px}
-  .nav a.on{background:var(--acc);border:3px solid var(--line);box-shadow:3px 3px 0 var(--line)}
-  .nav .plus{background:var(--acc2);color:#fff;border:3px solid var(--line);box-shadow:3px 3px 0 var(--line);flex:0.5;margin:0}
+  /* FLOATING BRUTAL PILL NAVBAR */
+  .nav-container{position:fixed;bottom:20px;left:0;right:0;display:flex;justify-content:center;z-index:100;pointer-events:none}
+  .nav-pill{display:flex;gap:8px;background:var(--card);border:4px solid var(--line);padding:8px 12px;box-shadow:6px 6px 0 var(--line);pointer-events:auto;border-radius:50px}
+  .nav-item{width:50px;height:50px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:22px;color:var(--line);cursor:pointer;transition:all .1s;text-decoration:none}
+  .nav-item:active{transform:scale(0.9)}
+  .nav-item.on{background:var(--acc);border:3px solid var(--line);box-shadow:2px 2px 0 var(--line)}
+  .nav-item.plus{background:var(--acc2);color:#fff;border:3px solid var(--line);box-shadow:2px 2px 0 var(--line)}
+  .nav-item.plus:active{box-shadow:0 0 0 var(--line);transform:translate(2px,2px)}
+  
   .view{display:none}.view.on{display:block}
   .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--acc);color:var(--line);border:4px solid var(--line);padding:12px 24px;font-weight:900;font-size:14px;box-shadow:6px 6px 0 var(--line);z-index:999;display:none;text-transform:uppercase}
   .toast.on{display:block}
@@ -125,13 +130,16 @@
   </div>
 </div>
 
-<nav class="nav">
-  <a class="on" id="navHome" onclick="switchView('home')"><span class="ico">🏠</span>home</a>
-  <a id="navTools" onclick="switchView('tools')"><span class="ico">🔧</span>tools</a>
-  <a class="plus" onclick="location.href='upload.html'"><span class="ico">➕</span></a>
-  <a id="navSettings" onclick="switchView('settings')"><span class="ico">⚙️</span>setting</a>
-  <a id="navInfo" onclick="switchView('info')"><span class="ico">👤</span>info</a>
-</nav>
+<!-- FLOATING BRUTAL PILL NAVBAR -->
+<div class="nav-container">
+  <div class="nav-pill">
+    <a class="nav-item on" id="navHome" onclick="switchView('home')">🏠</a>
+    <a class="nav-item" id="navTools" onclick="switchView('tools')">🔧</a>
+    <a class="nav-item plus" href="upload.html">➕</a>
+    <a class="nav-item" id="navSettings" onclick="switchView('settings')">⚙️</a>
+    <a class="nav-item" id="navInfo" onclick="switchView('info')">👤</a>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -145,7 +153,10 @@ let currentUser = null; let allPosts = []; let unsubFeed = null; let pendingPhot
 window.toast = function(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2000);}
 window.logout = function(){ signOut(auth).then(()=>location.href='auth.html'); }
 window.switchView = function(v) {
-  ['Home','Tools','Settings','Info'].forEach(n => { document.getElementById('view'+n).classList.remove('on'); document.getElementById('nav'+n).classList.remove('on'); });
+  ['Home','Tools','Settings','Info'].forEach(n => { 
+    document.getElementById('view'+n).classList.remove('on'); 
+    document.getElementById('nav'+n).classList.remove('on'); 
+  });
   document.getElementById('view' + (v.charAt(0).toUpperCase() + v.slice(1))).classList.add('on');
   document.getElementById('nav' + (v.charAt(0).toUpperCase() + v.slice(1))).classList.add('on');
   if(v === 'settings' || v === 'info') renderProfile();
@@ -156,7 +167,6 @@ onAuthStateChanged(auth, async (user) => {
   const snap = await getDoc(doc(db, 'users', user.uid));
   if (!snap.exists() || snap.data().banned) { location.href = 'auth.html'; return; }
   
-  // Developer dibolehin masuk ke publik juga
   currentUser = { uid: user.uid, ...snap.data() };
   if(currentUser.theme) document.documentElement.style.setProperty('--acc', currentUser.theme);
   
@@ -178,9 +188,8 @@ function renderFeed() {
   if (f) posts = posts.filter(p => (p.title||'').toLowerCase().includes(f) || (p.author||'').toLowerCase().includes(f));
   
   document.getElementById('feed').innerHTML = posts.map(p => {
-    // Centang Biru Pake HTML
-    const isDev = p.author === "Developer" || p.authorRole === "developer";
-    const verifyHtml = isDev ? `<span class="post-verify">✓</span>` : '';
+    // Cek Centang Biru (isVerified)
+    const verifyHtml = p.isVerified ? `<span class="post-verify">✓</span>` : '';
     
     // Avatar di Feed
     const avatarHtml = p.authorPhoto 
