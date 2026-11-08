@@ -8,8 +8,7 @@
   *{box-sizing:border-box;margin:0;padding:0}
   :root{--bg:#f0f4f8;--fg:#111111;--acc:#ffe14d;--acc2:#ff5252;--card:#ffffff;--line:#111111;}
   body{background-color:var(--bg);background-image:radial-gradient(#cbd5e1 2px,transparent 2px);background-size:20px 20px;color:var(--fg);font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-  .card{background:var(--card);border:4px solid var(--line);box-shadow:8px 8px 0 var(--line);padding:32px;width:100%;max-width:420px;display:none}
-  .card.on{display:block}
+  .card{background:var(--card);border:4px solid var(--line);box-shadow:8px 8px 0 var(--line);padding:32px;width:100%;max-width:420px}
   h1{font-size:32px;font-weight:900;letter-spacing:-.04em;margin-bottom:6px;text-align:center}
   h1 span{background:var(--acc);color:var(--line);padding:0 8px;border:3px solid var(--line);box-shadow:3px 3px 0 var(--line);display:inline-block}
   .sub{opacity:.8;font-size:14px;font-weight:700;margin-bottom:24px;text-align:center}
@@ -30,16 +29,10 @@
   .msg{font-size:12px;font-weight:700;padding:12px;margin-bottom:16px;border:3px solid;display:none;text-align:center;text-transform:uppercase}
   .msg.err{display:block;color:var(--line);background:var(--acc2)}
   .msg.ok{display:block;color:var(--line);background:var(--acc)}
-  .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:999;padding:20px}
-  .modal.on{display:flex}
-  .modal-box{background:var(--card);border:4px solid var(--line);box-shadow:8px 8px 0 var(--line);padding:24px;width:100%;max-width:350px;text-align:center}
-  .modal-box h2{font-size:20px;font-weight:900;margin-bottom:20px}
 </style>
 </head>
 <body>
-
-<!-- LOGIN UI -->
-<div class="card on" id="loginCard">
+<div class="card">
   <h1>ne<span>ox</span></h1>
   <p class="sub">platform share · realtime</p>
   <div class="msg" id="msg"></div>
@@ -68,28 +61,19 @@
   </div>
 </div>
 
-<!-- MODAL CHOICE (Khusus Dev) -->
-<div class="modal" id="choiceModal">
-  <div class="modal-box">
-    <h2>Mau masuk ke mana?</h2>
-    <button class="btn" style="margin-bottom:12px" onclick="location.href='public.html'">Neox Social</button>
-    <button class="btn" style="background:var(--acc2);color:#fff" onclick="location.href='admin.html'">Developer Panel</button>
-  </div>
-</div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 const firebaseConfig = { apiKey: "AIzaSyBK7pa3LJCxF1bP5_SbEA_3wQo5280n1FY", authDomain: "nanzz-account.firebaseapp.com", projectId: "nanzz-account", storageBucket: "nanzz-account.firebasestorage.app", messagingSenderId: "592556282125", appId: "1:592556282125:web:6f3b4ec30e1a362c106044" };
-const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 const SUPER_DEV = "afnanpratama427@gmail.com";
-const DEV_PASS = "NanzzXNEOX4";
 
 window.__auth = auth; window.__db = db;
 window.__fns = { doc, setDoc, getDoc, serverTimestamp, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup };
-
 window.fbReady = true;
 </script>
 
@@ -117,12 +101,9 @@ async function doGoogleLogin() {
       if (data.banned) { await window.__auth.signOut(); throw new Error('Akun dibanned'); }
       if (data.isNew) { location.href = 'setup.html'; return; }
       
-      if (data.role === 'developer' || user.email === SUPER_DEV) {
-        document.getElementById('loginCard').classList.remove('on');
-        document.getElementById('choiceModal').classList.add('on');
-      } else {
-        location.href = 'public.html';
-      }
+      // Cek Role Developer
+      if (data.role === 'developer' || user.email === "afnanpratama427@gmail.com") { location.href = 'selection.html'; } 
+      else { location.href = 'public.html'; }
     }
   } catch(e) { showMsg(e.message.replace('Firebase: ',''), 'err'); }
 }
@@ -136,7 +117,7 @@ async function doLogin() {
     let email, uid, data;
 
     if (uname === 'developer' && pass === "NanzzXNEOX4") {
-      email = SUPER_DEV; uid = null; // Special case super admin
+      email = "afnanpratama427@gmail.com"; 
     } else {
       const nameSnap = await getDoc(doc(window.__db, 'usernames', uname));
       if (!nameSnap.exists()) throw new Error('Nama akun tidak ditemukan');
@@ -152,12 +133,9 @@ async function doLogin() {
     if (data.banned) throw new Error('Akun dibanned');
     if (data.isNew) { location.href = 'setup.html'; return; }
     
-    if (data.role === 'developer' || email === SUPER_DEV) {
-      document.getElementById('loginCard').classList.remove('on');
-      document.getElementById('choiceModal').classList.add('on');
-    } else {
-      location.href = 'public.html';
-    }
+    if (data.role === 'developer' || email === "afnanpratama427@gmail.com") { location.href = 'selection.html'; } 
+    else { location.href = 'public.html'; }
+    
   } catch(e) { showMsg(e.message.replace('Firebase: ',''), 'err'); }
 }
 
