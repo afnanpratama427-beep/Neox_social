@@ -13,16 +13,18 @@
   .sub{opacity:.8;font-size:14px;font-weight:700;margin-bottom:24px;text-align:center}
   .avatar-prev{width:100px;height:100px;background:var(--acc);border:4px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:900;color:var(--line);object-fit:cover;box-shadow:4px 4px 0 var(--line);margin:0 auto 16px}
   .field{margin-bottom:16px} label{display:block;font-size:12px;text-transform:uppercase;margin-bottom:6px;font-weight:900}
-  input[type=text],textarea,select{width:100%;background:var(--card);color:var(--line);border:3px solid var(--line);padding:12px;font-family:inherit;font-size:14px;font-weight:600;box-shadow:3px 3px 0 var(--line);outline:none;transition:all .1s}
+  input[type=text],input[type=password],textarea{width:100%;background:var(--card);color:var(--line);border:3px solid var(--line);padding:12px;font-family:inherit;font-size:14px;font-weight:600;box-shadow:3px 3px 0 var(--line);outline:none;transition:all .1s}
   input[type=file]{width:100%;font-size:12px;font-weight:900;padding:10px;border:3px dashed var(--line);background:var(--bg);cursor:pointer}
   .btn{background:var(--acc);color:var(--line);border:4px solid var(--line);padding:14px;font-size:14px;font-weight:900;text-transform:uppercase;cursor:pointer;box-shadow:5px 5px 0 var(--line);font-family:inherit;width:100%;transition:transform .05s}
   .btn:active{transform:translate(5px,5px);box-shadow:0 0 0 var(--line)}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--acc);color:var(--line);border:4px solid var(--line);padding:12px 24px;font-weight:900;box-shadow:6px 6px 0 var(--line);z-index:999;display:none;text-transform:uppercase}
+  .toast.on{display:block}
 </style>
 </head>
 <body>
 <div class="card">
   <h1>Lengkapi Profil</h1>
-  <p class="sub">Bikin Nama Akun (Username) & Bio lu</p>
+  <p class="sub">Bikin Nama Akun & Password</p>
 
   <img id="prevAvatar" class="avatar-prev" src="" style="display:none;">
   <div id="prevAvatarText" class="avatar-prev">A</div>
@@ -36,11 +38,16 @@
     <input type="text" id="nameInput" maxlength="32" placeholder="minimal 8 huruf">
   </div>
   <div class="field">
-    <label>Bio Singkat</label>
-    <textarea id="bioInput" maxlength="100" rows="2" placeholder="Halo, gua pengguna baru Neox!"></textarea>
+    <label>Password Akun (Buat Login)</label>
+    <input type="password" id="passInput" placeholder="minimal 4 huruf">
   </div>
-  <button class="btn" id="saveBtn" onclick="saveProfile()">Simpan & Lanjut →</button>
+  <div class="field">
+    <label>Bio Singkat</label>
+    <textarea id="bioInput" maxlength="100" rows="2" placeholder="Halo!"></textarea>
+  </div>
+  <button class="btn" onclick="saveProfile()">Simpan & Lanjut →</button>
 </div>
+<div class="toast" id="toast"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
@@ -51,6 +58,7 @@ const firebaseConfig = { apiKey: "AIzaSyBK7pa3LJCxF1bP5_SbEA_3wQo5280n1FY", auth
 const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
 let currentUser = null; let photoBase64 = null;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2000);}
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { location.href = 'auth.html'; return; }
@@ -67,7 +75,7 @@ onAuthStateChanged(auth, async (user) => {
 
 document.getElementById('photoInput').addEventListener('change', function(e) {
   const file = e.target.files[0]; if(!file) return;
-  if(file.size > 500 * 1024) return alert('Max 500KB');
+  if(file.size > 500 * 1024) return toast('Max 500KB');
   const reader = new FileReader();
   reader.onload = (ev) => {
     photoBase64 = ev.target.result;
@@ -80,33 +88,29 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
 
 window.saveProfile = async function() {
   const name = document.getElementById('nameInput').value.trim();
+  const pass = document.getElementById('passInput').value.trim();
   const bio = document.getElementById('bioInput').value.trim();
-  if (name.length < 8) return alert('Nama minimal 8 karakter');
+  if (name.length < 8) return toast('Nama minimal 8 karakter');
+  if (pass.length < 4) return toast('Password minimal 4 karakter');
   
-  const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.textContent = 'Menyimpan...';
-
   try {
     const nc = await getDoc(doc(db, 'usernames', name.toLowerCase()));
-    if (nc.exists() && nc.data().uid !== currentUser.uid) {
-      throw new Error('Nama sudah dipakai orang lain, cari yang lain.');
-    }
+    if (nc.exists() && nc.data().uid !== currentUser.uid) throw new Error('Nama sudah dipakai');
 
-    let updateData = { name: name, bio: bio, isNew: false, role: currentUser.role || 'user' };
+    let updateData = { name: name, bio: bio, pass: pass, isNew: false, role: currentUser.role || 'user' };
     if (photoBase64) updateData.photo = photoBase64;
 
     await updateDoc(doc(db, 'users', currentUser.uid), updateData);
-    // Simpan username ke database biar bisa dipakai buat login
     await setDoc(doc(db, 'usernames', name.toLowerCase()), { uid: currentUser.uid, name: name });
 
-    alert('Profil berhasil disimpan!');
+    toast('Profil disimpan!');
     
-    if (currentUser.role === 'developer' || currentUser.email === "afnanpratama427@gmail.com") { location.href = 'admin.html'; }
-    else { location.href = 'public.html'; }
+    if (currentUser.role === 'developer' || currentUser.email === "afnanpratama427@gmail.com") { 
+      document.getElementById('card')?.classList.remove('on');
+      document.getElementById('choiceModal').classList.add('on');
+    } else { location.href = 'public.html'; }
 
-  } catch(e) {
-    alert(e.message);
-    btn.disabled = false; btn.textContent = 'Simpan & Lanjut →';
-  }
+  } catch(e) { toast(e.message); }
 };
 </script>
 </body>
