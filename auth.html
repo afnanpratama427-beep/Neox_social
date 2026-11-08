@@ -42,14 +42,15 @@
     Lanjutkan dengan Google
   </button>
 
-  <div class="divider">ATAU EMAIL</div>
+  <div class="divider">ATAU USERNAME</div>
+  
   <div class="tabs">
     <button class="tab on" id="tabLogin" onclick="switchTab('login')">LOGIN</button>
     <button class="tab" id="tabReg" onclick="switchTab('reg')">REGISTER</button>
   </div>
   
   <div id="loginForm">
-    <div class="field"><label>email</label><input type="email" id="liEmail" placeholder="kamu@email.com"></div>
+    <div class="field"><label>Nama Akun</label><input type="text" id="liName" placeholder="username lu"></div>
     <div class="field"><label>sandi</label><input type="password" id="liPass" placeholder="sandi"></div>
     <button class="btn" id="liBtn" onclick="doLogin()">masuk →</button>
   </div>
@@ -97,15 +98,12 @@ async function doGoogleLogin() {
     const snap = await getDoc(doc(window.__db, 'users', user.uid));
     
     if (!snap.exists()) {
-      // AKUN BARU: Simpan data awal, lalu WAJIB ke setup.html
       await setDoc(doc(window.__db, 'users', user.uid), { uid: user.uid, email: user.email, name: "user_"+Math.floor(Math.random()*9999), banned: false, role: 'user', isNew: true, createdAt: serverTimestamp() });
       location.href = 'setup.html'; 
     } else {
-      // AKUN LAMA: Cek banned & isNew
       const data = snap.data();
       if (data.banned) { await window.__auth.signOut(); throw new Error('Akun dibanned'); }
-      if (data.isNew) { location.href = 'setup.html'; return; } // Kalau belum lengkap, ke setup
-      
+      if (data.isNew || data.name.startsWith('user_')) { location.href = 'setup.html'; return; }
       if (data.role === 'developer' || user.email === "afnanpratama427@gmail.com") { location.href = 'admin.html'; return; }
       location.href = 'public.html';
     }
@@ -113,24 +111,37 @@ async function doGoogleLogin() {
 }
 
 async function doLogin() {
-  const email = document.getElementById('liEmail').value.trim();
+  const uname = document.getElementById('liName').value.trim().toLowerCase(); // Ambil Username
   const pass  = document.getElementById('liPass').value;
-  const btn = document.getElementById('liBtn'); btn.disabled = true; btn.textContent = 'Loading...';
+  const btn = document.getElementById('liBtn'); btn.disabled = true; btn.textContent = 'Mencari akun...';
+  
   try {
     const { signInWithEmailAndPassword, doc, getDoc, serverTimestamp } = window.__fns;
+    
+    // 1. Cari email berdasarkan username di koleksi 'usernames'
+    const nameSnap = await getDoc(doc(window.__db, 'usernames', uname));
+    if (!nameSnap.exists()) throw new Error('Nama akun tidak ditemukan');
+    
+    const uid = nameSnap.data().uid;
+    // 2. Ambil data user buat dapetin email
+    const userSnap = await getDoc(doc(window.__db, 'users', uid));
+    const email = userSnap.data().email;
+
+    // 3. Login pakai email tersebut
     const cred = await signInWithEmailAndPassword(window.__auth, email, pass);
-    const snap = await getDoc(doc(window.__db, 'users', cred.user.uid));
-    if (!snap.exists()) throw new Error('Akun tidak ditemukan');
     
-    const data = snap.data(); 
+    const data = userSnap.data(); 
     if (data.banned) throw new Error('Akun dibanned');
-    
-    // CEK ISNEW DULUAN SEBELUM CEK ROLE
     if (data.isNew) { location.href = 'setup.html'; return; }
     
     if (data.role === 'developer' || email === "afnanpratama427@gmail.com") { location.href = 'admin.html'; return; }
     location.href = 'public.html';
-  } catch(e) { showMsg('Email/Sandi salah atau dibanned', 'err'); } finally { btn.disabled = false; btn.textContent = 'masuk →'; }
+
+  } catch(e) { 
+    showMsg(e.message.replace('Firebase: ',''), 'err'); 
+  } finally { 
+    btn.disabled = false; btn.textContent = 'masuk →'; 
+  }
 }
 
 async function doRegister() {
@@ -141,7 +152,6 @@ async function doRegister() {
   try {
     const { createUserWithEmailAndPassword, doc, setDoc, serverTimestamp } = window.__fns;
     const cred = await createUserWithEmailAndPassword(window.__auth, email, pass);
-    // Daftar email baru: Wajib ke setup.html
     await setDoc(doc(window.__db, 'users', cred.user.uid), { uid: cred.user.uid, email, name: "user_"+Math.floor(Math.random()*9999), banned: false, role: 'user', isNew: true, createdAt: serverTimestamp() });
     location.href = 'setup.html';
   } catch(e) { showMsg(e.message.replace('Firebase: ',''), 'err'); } finally { btn.disabled = false; btn.textContent = 'daftar →'; }
