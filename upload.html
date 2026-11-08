@@ -7,7 +7,7 @@
 <style>
   :root{color-scheme:light;--bg:#f0f4f8;--fg:#111111;--acc:#ffe14d;--acc2:#ff5252;--acc3:#4dff88;--card:#ffffff;--line:#111111}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background-color:var(--bg);background-image:radial-gradient(#cbd5e1 2px,transparent 2px);background-size:20px 20px;color:var(--fg);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding:24px 24px 100px}
+  body{background-color:var(--bg);background-image:radial-gradient(#cbd5e1 2px,transparent 2px);background-size:20px 20px;color:var(--fg);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding:24px 24px 120px}
   .top{max-width:900px;margin:0 auto 24px;display:flex;justify-content:space-between;align-items:center}
   
   .logo-wrap{display:flex;align-items:center;gap:4px}
@@ -41,11 +41,16 @@
   .link-row{display:flex;gap:8px}
   .link-row input{flex:1;font-size:12px}
   .link-row button{background:var(--card);border:3px solid var(--line);padding:0 16px;cursor:pointer;font-weight:900;box-shadow:3px 3px 0 var(--line)}
-  .nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:4px solid var(--line);display:flex;z-index:100;padding:8px;gap:8px;justify-content:space-between}
-  .nav a{flex:1;text-align:center;padding:8px 4px;color:var(--line);font-size:11px;font-weight:900;text-transform:uppercase;cursor:pointer;border:3px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none}
-  .nav a .ico{font-size:22px;margin-bottom:4px}
-  .nav a.on{background:var(--acc);border:3px solid var(--line);box-shadow:3px 3px 0 var(--line)}
-  .nav .plus{background:var(--acc2);color:#fff;border:3px solid var(--line);box-shadow:3px 3px 0 var(--line);flex:0.5;margin:0}
+  
+  /* FLOATING BRUTAL PILL NAVBAR */
+  .nav-container{position:fixed;bottom:20px;left:0;right:0;display:flex;justify-content:center;z-index:100;pointer-events:none}
+  .nav-pill{display:flex;gap:8px;background:var(--card);border:4px solid var(--line);padding:8px 12px;box-shadow:6px 6px 0 var(--line);pointer-events:auto;border-radius:50px}
+  .nav-item{width:50px;height:50px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:22px;color:var(--line);cursor:pointer;transition:all .1s;text-decoration:none}
+  .nav-item:active{transform:scale(0.9)}
+  .nav-item.on{background:var(--acc);border:3px solid var(--line);box-shadow:2px 2px 0 var(--line)}
+  .nav-item.plus{background:var(--acc2);color:#fff;border:3px solid var(--line);box-shadow:2px 2px 0 var(--line)}
+  .nav-item.plus:active{box-shadow:0 0 0 var(--line);transform:translate(2px,2px)}
+  
   .progress-bar{height:10px;background:var(--bg);border:3px solid var(--line);margin:10px 0;display:none}
   .progress-bar.on{display:block}
   .progress-bar .fill{height:100%;background:var(--acc);width:0;transition:width .2s}
@@ -97,13 +102,16 @@
   </div>
 </div>
 
-<nav class="nav">
-  <a href="public.html"><span class="ico">🏠</span>home</a>
-  <a href="public.html" onclick="switchView('tools')"><span class="ico">🔧</span>tools</a>
-  <a class="plus" href="upload.html"><span class="ico">➕</span></a>
-  <a href="public.html" onclick="switchView('settings')"><span class="ico">⚙️</span>setting</a>
-  <a href="public.html" onclick="switchView('info')"><span class="ico">👤</span>info</a>
-</nav>
+<!-- FLOATING BRUTAL PILL NAVBAR -->
+<div class="nav-container">
+  <div class="nav-pill">
+    <a class="nav-item" href="public.html">🏠</a>
+    <a class="nav-item" href="public.html">🔧</a>
+    <a class="nav-item plus on" href="upload.html">➕</a>
+    <a class="nav-item" href="public.html">⚙️</a>
+    <a class="nav-item" href="public.html">👤</a>
+  </div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
@@ -140,11 +148,12 @@ window.doUpload = async function() {
   if (!currentUser) return showMsg('Belum login', 'err');
   const title = document.getElementById('title').value.trim(); if (!title) return showMsg('Judul wajib', 'err');
   
+  // SIMPEN FOTO & CENTANG BIRU AUTHOR
   let payload = { 
     type: currentType, title, desc: document.getElementById('desc').value.trim(), 
     author: currentUser.name, authorId: currentUser.uid, 
-    authorPhoto: currentUser.photo || null, // FOTO AUTHOR
-    authorRole: currentUser.role || 'user', // ROLE AUTHOR (BUAT CENTANG BIRU)
+    authorPhoto: currentUser.photo || null, 
+    isVerified: currentUser.isVerified || false, 
     createdAt: serverTimestamp(), views: 0, downloads: 0, likes: 0 
   };
   
@@ -194,7 +203,6 @@ window.doUpload = async function() {
 }
 
 onAuthStateChanged(auth, async (user) => {
-  // UDAH DIBENERIN: Email Super Dev tetap bisa upload, nggak dilempar ke auth
   if (!user) { location.href = 'auth.html'; return; }
   const snap = await getDoc(doc(db, 'users', user.uid));
   if (!snap.exists() || snap.data().banned) { location.href = 'auth.html'; return; }
