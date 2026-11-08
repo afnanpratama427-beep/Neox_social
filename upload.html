@@ -3,14 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Upload · Neox</title>
+<title>Upload · NEOX</title>
 <style>
   :root{color-scheme:light;--bg:#f0f4f8;--fg:#111111;--acc:#ffe14d;--acc2:#ff5252;--acc3:#4dff88;--card:#ffffff;--line:#111111}
   *{box-sizing:border-box;margin:0;padding:0}
   body{background-color:var(--bg);background-image:radial-gradient(#cbd5e1 2px,transparent 2px);background-size:20px 20px;color:var(--fg);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding:24px 24px 100px}
   .top{max-width:900px;margin:0 auto 24px;display:flex;justify-content:space-between;align-items:center}
-  .logo{font-size:24px;font-weight:900;border:3px solid var(--line);background:var(--card);padding:4px 10px;box-shadow:4px 4px 0 var(--line)}
-  .logo span{background:var(--acc);padding:0 4px;border:2px solid var(--line)}
+  
+  .logo-wrap{display:flex;align-items:center;gap:4px}
+  .logo{font-size:24px;font-weight:900;border:3px solid var(--line);background:var(--card);padding:4px 10px;box-shadow:4px 4px 0 var(--line);display:flex;align-items:center}
+  .logo span{background:var(--acc);padding:0 4px;border:2px solid var(--line);margin-left:2px}
+  .header-verify{background:#1877F2;color:white;border-radius:50%;padding:2px 6px;font-weight:bold;font-size:14px;border:2px solid var(--line);box-shadow:2px 2px 0 var(--line)}
+  
   .card{background:var(--card);border:4px solid var(--line);box-shadow:8px 8px 0 var(--line);padding:24px;margin-bottom:24px;max-width:900px;margin-left:auto;margin-right:auto}
   h2{font-size:14px;text-transform:uppercase;font-weight:900;color:var(--line);margin-bottom:20px;border-bottom:3px solid var(--line);padding-bottom:10px;letter-spacing:1px}
   .type-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
@@ -48,7 +52,13 @@
 </style>
 </head>
 <body>
-<div class="top"><div class="logo">ne<span>ox</span></div><div style="font-size:12px;font-weight:900" id="userChip">—</div></div>
+<div class="top">
+  <div class="logo-wrap">
+    <div class="logo">NE<span>OX</span></div>
+    <div class="header-verify">✓</div>
+  </div>
+  <div style="font-size:12px;font-weight:900" id="userChip">—</div>
+</div>
 <div>
   <div class="card">
     <h2>// upload content</h2>
@@ -130,11 +140,11 @@ window.doUpload = async function() {
   if (!currentUser) return showMsg('Belum login', 'err');
   const title = document.getElementById('title').value.trim(); if (!title) return showMsg('Judul wajib', 'err');
   
-  // NYIMPEN FOTO & ROLE AUTHOR BIAR MUNCUL DI FEED
   let payload = { 
     type: currentType, title, desc: document.getElementById('desc').value.trim(), 
     author: currentUser.name, authorId: currentUser.uid, 
-    authorPhoto: currentUser.photo || null, authorRole: currentUser.role || 'user',
+    authorPhoto: currentUser.photo || null, // FOTO AUTHOR
+    authorRole: currentUser.role || 'user', // ROLE AUTHOR (BUAT CENTANG BIRU)
     createdAt: serverTimestamp(), views: 0, downloads: 0, likes: 0 
   };
   
@@ -184,10 +194,13 @@ window.doUpload = async function() {
 }
 
 onAuthStateChanged(auth, async (user) => {
-  if (!user || user.email === "afnanpratama427@gmail.com") { location.href = 'auth.html'; return; }
+  // UDAH DIBENERIN: Email Super Dev tetap bisa upload, nggak dilempar ke auth
+  if (!user) { location.href = 'auth.html'; return; }
   const snap = await getDoc(doc(db, 'users', user.uid));
   if (!snap.exists() || snap.data().banned) { location.href = 'auth.html'; return; }
-  currentUser = { uid: user.uid, ...snap.data() }; document.getElementById('userChip').textContent = currentUser.name;
+  
+  currentUser = { uid: user.uid, ...snap.data() }; 
+  document.getElementById('userChip').textContent = currentUser.name;
 });
 </script>
 </body>
